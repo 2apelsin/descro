@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
       console.log(`📥 /start from user ${user.id} (${user.username || user.first_name})`)
 
       // Создаём прямую ссылку для авторизации
-      const loginUrl = `${SITE_URL}/api/auth/demo-login?telegram_id=${user.id}&username=${encodeURIComponent(user.username || '')}&first_name=${encodeURIComponent(user.first_name || '')}`
+      const siteUrl = SITE_URL.includes('localhost') ? 'https://descro-production.up.railway.app' : SITE_URL
+      const loginUrl = `${siteUrl}/api/auth/demo-login?telegram_id=${user.id}&username=${encodeURIComponent(user.username || '')}&first_name=${encodeURIComponent(user.first_name || '')}`
 
       await sendMessage(
         chatId,
