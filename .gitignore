@@ -36,3 +36,6 @@ next-env.d.ts
 # IDE
 .vscode
 .idea
+
+# Credentials (содержит секретные ключи)
+CREDENTIALS.md

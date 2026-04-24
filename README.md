@@ -4,12 +4,24 @@
 
 ## 🚀 Быстрый старт
 
+### Локально
 ```bash
 npm install
 npm run dev
 ```
 
-Откройте http://localhost:3000
+Откройте http://localhost:3001
+
+### Деплой на Railway (5 минут)
+
+**Читай:** `DEPLOY_NOW.md` — пошаговая инструкция
+
+1. Зайти на https://railway.app
+2. Подключить GitHub репозиторий
+3. Добавить переменные окружения
+4. Готово!
+
+**Важно:** Не используй Vercel — он не поддерживает `NODE_TLS_REJECT_UNAUTHORIZED=0` для GigaChat API.
 
 ## ✨ Все фичи реализованы
 
@@ -64,21 +76,24 @@ npm run dev
 
 ## 🔧 Настройка
 
-### Подключение OpenAI (опционально)
+### GigaChat API (основной метод)
 
-1. Добавьте в `.env.local`:
-```env
-OPENAI_API_KEY=sk-your-key
-```
+Уже настроен! Работает из коробки.
 
-2. Обновите `app/api/generate/route.ts`
+Подробности: `GIGACHAT_SETUP.md`
 
-### Изменение лимита
+### Telegram Bot
 
-В `components/demo-form.tsx`:
-```typescript
-const DAILY_LIMIT = 3 // Измените на нужное значение
-```
+1. Бот: @Telegagocod_bot
+2. После деплоя обновить домен в @BotFather
+
+Подробности: `TELEGRAM_SETUP.md`
+
+### Supabase
+
+База данных уже настроена.
+
+Схема: `supabase-schema.sql`
 
 ## 📁 Структура
 
@@ -106,13 +121,24 @@ const DAILY_LIMIT = 3 // Измените на нужное значение
 - **Стиль:** Минимализм с акцентами
 - **Эффекты:** Печатная машинка, скелетоны, анимации
 
-## 📝 TODO
+## 📝 Что осталось сделать
 
-- [ ] Интеграция платежей
-- [ ] Авторизация через Telegram
-- [ ] Реальный AI (OpenAI)
-- [ ] Аналитика (Яндекс Метрика)
-- [ ] A/B тестирование
+- [ ] Задеплоить на Railway (`DEPLOY_NOW.md`)
+- [ ] Добавить ИНН в `/requisites`
+- [ ] Создать оферту (`public/oferta.pdf`)
+- [ ] Обновить домен бота в @BotFather
+- [ ] Подать заявку в ЮKassa
+
+Полный чеклист: `FINAL_CHECKLIST.md`
+
+## 📚 Документация
+
+- `DEPLOY_NOW.md` — деплой за 5 минут ⭐
+- `RAILWAY_DEPLOY.md` — подробная инструкция Railway
+- `FINAL_CHECKLIST.md` — что нужно сделать перед запуском
+- `GIGACHAT_SETUP.md` — настройка GigaChat API
+- `TELEGRAM_SETUP.md` — настройка Telegram бота
+- `CREDENTIALS.md` — все ключи и пароли (не коммитить!)
 
 ## 📄 Лицензия
 

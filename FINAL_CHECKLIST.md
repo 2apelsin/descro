@@ -12,17 +12,22 @@
 - [ ] Создать оферту на https://oferta-generator.ru
 - [ ] Положить в `public/oferta.pdf`
 
-## 3. Деплой
+## 3. Деплой на Railway
 
-- [ ] Выбрать платформу (Railway/VPS, НЕ Vercel!)
-- [ ] Добавить все переменные окружения
-- [ ] Задеплоить
-- [ ] Проверить что GigaChat работает
+- [ ] Создать проект на https://railway.app
+- [ ] Подключить GitHub репозиторий `2apelsin/descro`
+- [ ] Добавить переменные окружения (см. `RAILWAY_DEPLOY.md`)
+- [ ] Дождаться автоматической пересборки
+- [ ] Получить домен Railway (например: `descro-production.up.railway.app`)
+- [ ] Проверить что сайт работает
+- [ ] Проверить что GigaChat генерирует описания
 
 ## 4. Telegram бот
 
-- [ ] Обновить домен в @BotFather (`/setdomain`)
-- [ ] Указать продакшн домен
+- [ ] После деплоя на Railway обновить домен в @BotFather
+- [ ] Отправить `/setdomain` боту @BotFather
+- [ ] Выбрать `@Telegagocod_bot`
+- [ ] Указать домен Railway (без https://)
 
 ## 5. ЮKassa
 
@@ -50,6 +55,7 @@
 
 ## Инструкции
 
-- Деплой: `VERCEL_DEPLOY.md`
+- **Деплой на Railway**: `RAILWAY_DEPLOY.md` ⭐
 - Telegram: `TELEGRAM_SETUP.md`
 - GigaChat: `GIGACHAT_SETUP.md`
+- ~~Vercel (не работает)~~: `VERCEL_DEPLOY.md`
