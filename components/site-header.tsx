@@ -36,6 +36,12 @@ export function SiteHeader() {
             <div className="h-10 w-24 animate-pulse rounded-lg bg-slate-200" />
           ) : user ? (
             <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="hidden text-sm text-slate-600 hover:text-slate-900 sm:block"
+              >
+                Личный кабинет
+              </Link>
               <div className="hidden text-sm sm:block">
                 <div className="font-medium text-slate-900">{user.first_name || user.username}</div>
                 <div className="text-xs text-slate-500">
