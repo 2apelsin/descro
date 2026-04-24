@@ -1,4 +1,5 @@
 {
+  "buildCommand": "next build",
   "env": {
     "NODE_TLS_REJECT_UNAUTHORIZED": "0"
   },
@@ -6,5 +7,11 @@
     "env": {
       "NODE_TLS_REJECT_UNAUTHORIZED": "0"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
 }
