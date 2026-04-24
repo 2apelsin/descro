@@ -70,7 +70,7 @@ export function DemoForm() {
         .then(data => {
           if (data.success && data.user) {
             const proUntil = data.user.pro_until ? new Date(data.user.pro_until) : null
-            const isProActive = proUntil && proUntil > new Date()
+            const isProActive = !!(proUntil && proUntil > new Date())
             
             setIsPro(isProActive)
             setRemaining(data.user.generations_left)
