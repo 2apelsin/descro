@@ -18,10 +18,16 @@ function AuthCallbackContent() {
         
         setStatus('success')
         
-        // Перенаправляем на главную через 1 секунду
-        setTimeout(() => {
-          router.push('/')
-        }, 1000)
+        // Если открыто в popup - закрываем и обновляем родительское окно
+        if (window.opener) {
+          window.opener.postMessage({ type: 'telegram_auth_success', token }, '*')
+          window.close()
+        } else {
+          // Если открыто в том же окне - перенаправляем на главную
+          setTimeout(() => {
+            router.push('/')
+          }, 1000)
+        }
       } catch (error) {
         console.error('Auth error:', error)
         setStatus('error')
@@ -46,7 +52,7 @@ function AuthCallbackContent() {
           <>
             <div className="mb-4 text-6xl">✅</div>
             <h1 className="mb-2 text-2xl font-bold text-slate-900">Успешно!</h1>
-            <p className="text-slate-600">Перенаправляем на главную...</p>
+            <p className="text-slate-600">Можете закрыть это окно</p>
           </>
         )}
         
