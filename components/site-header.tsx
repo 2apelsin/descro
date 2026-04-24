@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { TelegramLogin } from "./telegram-login"
 
 export function SiteHeader() {
   const { user, loading, logout } = useAuth()
@@ -51,12 +52,15 @@ export function SiteHeader() {
               </button>
             </div>
           ) : (
-            <Link
-              href="#demo"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              Попробовать бесплатно
-            </Link>
+            <div className="flex items-center gap-3">
+              <TelegramLogin />
+              <Link
+                href="#demo"
+                className="hidden rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:block"
+              >
+                Попробовать
+              </Link>
+            </div>
           )}
         </div>
       </div>
