@@ -3,6 +3,9 @@ import { randomUUID } from 'crypto'
 import { supabase } from '@/lib/supabase'
 import { verifyToken } from '@/lib/auth'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // Твой ключ из кабинета Сбера (уже в base64)
 const GIGACHAT_AUTH = 'MDE5ZGJiMzUtOTI4MS03MWNkLTk1NzQtM2QyYjFkZTRjY2ZhOjljMWNmNGUyLTI5YmYtNGQ2OS05MDIwLTc1Mzg1OTkwMjE1NA=='
 
