@@ -18,16 +18,10 @@ function AuthCallbackContent() {
         
         setStatus('success')
         
-        // Если открыто в popup - закрываем и обновляем родительское окно
-        if (window.opener) {
-          window.opener.postMessage({ type: 'telegram_auth_success', token }, '*')
-          window.close()
-        } else {
-          // Если открыто в том же окне - перенаправляем на главную
-          setTimeout(() => {
-            router.push('/')
-          }, 1000)
-        }
+        // Перенаправляем на главную
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 500)
       } catch (error) {
         console.error('Auth error:', error)
         setStatus('error')
