@@ -1,15 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
+  reactStrictMode: true,
+  swcMinify: true,
+  
+  // Для работы с GigaChat API
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
-  images: {
-    unoptimized: true,
+
+  // Отключаем проверку SSL для GigaChat (только для разработки)
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push({
+        'node:tls': 'commonjs node:tls',
+        'node:https': 'commonjs node:https',
+      })
+    }
+    return config
   },
-  devIndicators: {
-    appIsrStatus: false,
-    buildActivity: false,
-    buildActivityPosition: 'bottom-right',
+
+  env: {
+    NODE_TLS_REJECT_UNAUTHORIZED: '0',
   },
 }
 
