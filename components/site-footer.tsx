@@ -65,8 +65,11 @@ export function SiteFooter() {
         <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-8 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Descro. Все права защищены</p>
           <div className="flex gap-6">
-            <Link href="/oferta.pdf" target="_blank" className="hover:text-slate-900">
+            <Link href="/oferta" className="hover:text-slate-900">
               Оферта
+            </Link>
+            <Link href="/privacy" className="hover:text-slate-900">
+              Конфиденциальность
             </Link>
             <Link href="/requisites" className="hover:text-slate-900">
               Реквизиты

@@ -56,6 +56,7 @@ export function DemoForm() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [creatingPayment, setCreatingPayment] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   // Загрузка лимита из localStorage и проверка PRO статуса
   useEffect(() => {
@@ -269,6 +270,11 @@ export function DemoForm() {
     
     if (!token) {
       setToast({ message: "Сначала войдите через Telegram", type: "error" })
+      return
+    }
+    
+    if (!agreedToTerms) {
+      setToast({ message: "Необходимо принять условия оферты", type: "error" })
       return
     }
     
@@ -536,6 +542,27 @@ export function DemoForm() {
               <p className="text-xs text-white/60 flex items-center gap-2">
                 <span className="text-emerald-400">✓</span> Доступ ко всем маркетплейсам
               </p>
+            </div>
+
+            {/* Галочка согласия */}
+            <div className="mb-4 flex items-start gap-2 text-left">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-emerald-500"
+              />
+              <label htmlFor="terms" className="text-xs text-white/70 cursor-pointer">
+                Я ознакомлен и принимаю условия{" "}
+                <a href="/oferta" target="_blank" className="text-emerald-400 hover:underline">
+                  Публичной оферты
+                </a>
+                {" "}и{" "}
+                <a href="/privacy" target="_blank" className="text-emerald-400 hover:underline">
+                  Политики конфиденциальности
+                </a>
+              </label>
             </div>
             
             <p className="mt-4 text-xs text-white/50">
