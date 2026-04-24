@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
     const firstName = searchParams.get('first_name')
 
     if (!telegramId) {
-      return NextResponse.redirect(new URL('/?error=missing_telegram_id', req.url))
+      const productionUrl = 'https://descro-production.up.railway.app'
+      return NextResponse.redirect(new URL('/?error=missing_telegram_id', productionUrl))
     }
 
     const userData = {
@@ -44,11 +45,13 @@ export async function GET(req: NextRequest) {
     // Создаем JWT токен
     const token = await createToken(userData)
 
-    // Перенаправляем на callback с токеном
-    return NextResponse.redirect(new URL(`/auth/callback?token=${token}`, req.url))
+    // Перенаправляем на callback с токеном (хардкод production URL)
+    const productionUrl = 'https://descro-production.up.railway.app'
+    return NextResponse.redirect(new URL(`/auth/callback?token=${token}`, productionUrl))
   } catch (error: any) {
     console.error('Direct login error:', error)
-    return NextResponse.redirect(new URL('/?error=auth_failed', req.url))
+    const productionUrl = 'https://descro-production.up.railway.app'
+    return NextResponse.redirect(new URL('/?error=auth_failed', productionUrl))
   }
 }
 
