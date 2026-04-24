@@ -16,7 +16,7 @@ export default function RequisitesPage() {
             <div className="space-y-4">
               <div>
                 <h3 className="mb-1 text-sm font-medium text-slate-500">ФИО</h3>
-                <p className="text-lg text-slate-900">[Ваши ФИО]</p>
+                <p className="text-lg text-slate-900">Аверьянов Илья Александрович</p>
               </div>
 
               <div>
