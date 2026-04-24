@@ -1,0 +1,37 @@
+✅ WEBHOOK ENDPOINT РАБОТАЕТ!
+
+Проверено: https://descro-production.up.railway.app/api/telegram/webhook
+Статус: 200 OK
+Ответ: {"status":"ok","message":"Telegram webhook is running"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 ПОСЛЕДНИЙ ШАГ: Настройте webhook
+
+Откройте эту ссылку в браузере (можно через VPN или попросите кого-то):
+
+https://api.telegram.org/bot8637559443:AAFYBo5VqNDYb2QW4k8XRDtuyOCtXZkoKSU/setWebhook?url=https://descro-production.up.railway.app/api/telegram/webhook
+
+Должно вернуть:
+{"ok":true,"result":true,"description":"Webhook was set"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ ПРОВЕРКА:
+
+1. Откройте: https://t.me/Telegagocod_bot
+2. Нажмите Start
+3. Должна появиться кнопка "🔐 Войти на сайт"
+4. Нажмите → войдете на сайт
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 ПРОВЕРИТЬ СТАТУС WEBHOOK:
+
+https://api.telegram.org/bot8637559443:AAFYBo5VqNDYb2QW4k8XRDtuyOCtXZkoKSU/getWebhookInfo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 ГОТОВО!
+
+После настройки webhook вход через Telegram будет работать!
