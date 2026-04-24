@@ -1,23 +1,45 @@
 'use client'
 
+import { useEffect } from 'react'
+import Script from 'next/script'
+
 export function TelegramLogin() {
-  const handleTelegramLogin = () => {
-    // Просто открываем бота - всё остальное произойдет автоматически
-    const botUsername = 'Telegagocod_bot'
-    window.location.href = `https://t.me/${botUsername}`
-  }
+  useEffect(() => {
+    // Функция которую вызовет Telegram Widget
+    (window as any).onTelegramAuth = async (user: any) => {
+      try {
+        const res = await fetch('/api/auth/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user),
+        })
+        
+        const data = await res.json()
+        
+        if (data.success && data.token) {
+          localStorage.setItem('descro_token', data.token)
+          window.location.reload()
+        }
+      } catch (error) {
+        console.error('Auth error:', error)
+      }
+    }
+  }, [])
 
   return (
-    <button
-      onClick={handleTelegramLogin}
-      className="flex items-center gap-2 rounded-lg bg-[#0088cc] px-4 py-2 text-sm font-medium text-white hover:bg-[#0077b3] transition-colors"
-      title="Войти через Telegram"
-    >
-      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18.717-.962 3.767-1.362 5.001-.169.523-.504.697-.826.715-.702.031-1.235-.464-1.913-.908-.106-.07-2.022-1.294-2.164-1.415-.142-.121-.302-.363-.015-.647.287-.284 2.181-2.121 2.181-2.121s.256-.256.128-.384c-.128-.128-.384 0-.384 0s-2.612 1.656-2.899 1.848c-.287.192-.574.287-.861.287-.287 0-.574-.095-.861-.287-.287-.192-1.913-1.223-1.913-1.223s-.702-.447.495-.926c0 0 4.025-1.656 5.362-2.217.287-.12.574-.24.861-.24s.574.12.861.24c1.337.561 5.362 2.217 5.362 2.217s.702.287.495.926z"/>
-      </svg>
-      <span className="hidden sm:inline">Войти через Telegram</span>
-      <span className="sm:hidden">Telegram</span>
-    </button>
+    <>
+      <Script
+        src="https://telegram.org/js/telegram-widget.js?22"
+        strategy="lazyOnload"
+      />
+      <script
+        async
+        src="https://telegram.org/js/telegram-widget.js?22"
+        data-telegram-login="Telegagocod_bot"
+        data-size="medium"
+        data-onauth="onTelegramAuth(user)"
+        data-request-access="write"
+      />
+    </>
   )
 }
