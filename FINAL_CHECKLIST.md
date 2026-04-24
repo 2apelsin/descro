@@ -51,11 +51,11 @@
 
 ## 7. Что нужно доделать
 
-1. **Добавить ИНН** в `app/requisites/page.tsx`
-2. **Создать оферту** и положить в `public/oferta.pdf`
-3. **Задеплоить на Railway/VPS** (не Vercel!)
+1. ~~**Добавить ИНН** в `app/requisites/page.tsx`~~ ✅
+2. ~~**Создать оферту** и положить в `public/oferta.html`~~ ✅
+3. **Задеплоить на Railway/VPS** (не Vercel!) ✅
 4. **Обновить домен бота** в @BotFather
-5. **Подать заявку в ЮKassa**
+5. **Подать заявку в ЮKassa** (см. `YOOKASSA_APPLICATION.md`)
 
 ## Инструкции
 
