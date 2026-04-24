@@ -56,13 +56,21 @@ export default function RequisitesPage() {
 
           <div className="border-t border-slate-200 pt-6">
             <h2 className="mb-4 text-xl font-semibold text-slate-900">Документы</h2>
-            <Link 
-              href="/oferta.pdf" 
-              target="_blank"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 underline"
-            >
-              📄 Скачать договор оферты (PDF)
-            </Link>
+            <div className="space-y-2">
+              <Link 
+                href="/oferta" 
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 underline"
+              >
+                📄 Публичная оферта (договор)
+              </Link>
+              <br />
+              <Link 
+                href="/privacy" 
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 underline"
+              >
+                🔒 Политика конфиденциальности
+              </Link>
+            </div>
           </div>
         </div>
       </main>
