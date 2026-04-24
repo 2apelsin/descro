@@ -54,25 +54,51 @@ export function DemoForm() {
   const [enhancing, setEnhancing] = useState(false)
   const [remaining, setRemaining] = useState(3)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [creatingPayment, setCreatingPayment] = useState(false)
 
-  // Загрузка лимита из localStorage
+  // Загрузка лимита из localStorage и проверка PRO статуса
   useEffect(() => {
-    const saved = localStorage.getItem('descro_remaining')
-    const resetAt = localStorage.getItem('descro_reset_at')
-    const now = Date.now()
-
-    if (resetAt && now - parseInt(resetAt) > 24 * 60 * 60 * 1000) {
-      // Прошло 24 часа - сбрасываем
-      localStorage.setItem('descro_remaining', '3')
-      localStorage.setItem('descro_reset_at', now.toString())
-      setRemaining(3)
-    } else if (saved) {
-      const count = parseInt(saved)
-      setRemaining(count)
-      if (count <= 0) setShowPaywall(true)
+    const token = localStorage.getItem('descro_token')
+    
+    // Проверяем PRO статус если есть токен
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user) {
+            const proUntil = data.user.pro_until ? new Date(data.user.pro_until) : null
+            const isProActive = proUntil && proUntil > new Date()
+            
+            setIsPro(isProActive)
+            setRemaining(data.user.generations_left)
+            
+            if (!isProActive && data.user.generations_left <= 0) {
+              setShowPaywall(true)
+            }
+          }
+        })
+        .catch(err => console.error('Failed to fetch user:', err))
     } else {
-      localStorage.setItem('descro_remaining', '3')
-      localStorage.setItem('descro_reset_at', now.toString())
+      // Локальный лимит для неавторизованных
+      const saved = localStorage.getItem('descro_remaining')
+      const resetAt = localStorage.getItem('descro_reset_at')
+      const now = Date.now()
+
+      if (resetAt && now - parseInt(resetAt) > 24 * 60 * 60 * 1000) {
+        localStorage.setItem('descro_remaining', '3')
+        localStorage.setItem('descro_reset_at', now.toString())
+        setRemaining(3)
+      } else if (saved) {
+        const count = parseInt(saved)
+        setRemaining(count)
+        if (count <= 0) setShowPaywall(true)
+      } else {
+        localStorage.setItem('descro_remaining', '3')
+        localStorage.setItem('descro_reset_at', now.toString())
+      }
     }
   }, [])
 
@@ -90,7 +116,8 @@ export function DemoForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    if (remaining <= 0) {
+    // Проверяем лимит только если не PRO
+    if (!isPro && remaining <= 0) {
       setShowPaywall(true)
       return
     }
@@ -145,13 +172,18 @@ export function DemoForm() {
         setLoading(false)
         localStorage.setItem("descro_last_result", JSON.stringify(data.data))
         
-        // Уменьшаем счётчик
-        const newRemaining = remaining - 1
-        setRemaining(newRemaining)
-        localStorage.setItem('descro_remaining', newRemaining.toString())
-        
-        if (newRemaining <= 0) {
-          setShowPaywall(true)
+        // Уменьшаем счётчик только если не PRO
+        if (!isPro) {
+          const newRemaining = remaining - 1
+          setRemaining(newRemaining)
+          
+          if (!token) {
+            localStorage.setItem('descro_remaining', newRemaining.toString())
+          }
+          
+          if (newRemaining <= 0) {
+            setShowPaywall(true)
+          }
         }
       }, 300)
     } catch (err) {
@@ -229,6 +261,42 @@ export function DemoForm() {
       setToast({ message: "Не удалось улучшить характеристики", type: "error" })
     } finally {
       setEnhancing(false)
+    }
+  }
+
+  async function createPayment(plan: string) {
+    const token = localStorage.getItem('descro_token')
+    
+    if (!token) {
+      setToast({ message: "Сначала войдите через Telegram", type: "error" })
+      return
+    }
+    
+    setCreatingPayment(true)
+    
+    try {
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ plan })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Ошибка создания платежа')
+      }
+      
+      // Перенаправляем на страницу оплаты
+      window.location.href = data.paymentUrl
+    } catch (error) {
+      console.error('Payment error:', error)
+      setToast({ message: 'Не удалось создать платёж', type: 'error' })
+    } finally {
+      setCreatingPayment(false)
     }
   }
 
@@ -368,12 +436,12 @@ export function DemoForm() {
 
           <Button
             type="submit"
-            disabled={loading || !name.trim() || remaining <= 0}
+            disabled={loading || !name.trim() || (!isPro && remaining <= 0)}
             className="h-11 w-full rounded-xl bg-white text-slate-900 hover:bg-white/90 disabled:opacity-50 font-medium"
           >
             {loading ? (
               loadingText
-            ) : remaining <= 0 ? (
+            ) : !isPro && remaining <= 0 ? (
               "Лимит исчерпан"
             ) : (
               <>
@@ -385,12 +453,18 @@ export function DemoForm() {
 
           {/* Счётчик генераций */}
           <div className="text-center">
-            <p className={cn(
-              "text-sm",
-              remaining === 0 ? "text-red-400" : remaining === 1 ? "text-yellow-400" : "text-white/60"
-            )}>
-              {remaining === 0 ? "Лимит исчерпан" : `Осталось ${remaining} из 3 бесплатных генераций`}
-            </p>
+            {isPro ? (
+              <p className="text-sm text-emerald-400">
+                ✨ PRO активен — безлимитные генерации
+              </p>
+            ) : (
+              <p className={cn(
+                "text-sm",
+                remaining === 0 ? "text-red-400" : remaining === 1 ? "text-yellow-400" : "text-white/60"
+              )}>
+                {remaining === 0 ? "Лимит исчерпан" : `Осталось ${remaining} из 3 бесплатных генераций`}
+              </p>
+            )}
           </div>
 
           {error && (
@@ -421,23 +495,48 @@ export function DemoForm() {
               Вы использовали все 3 бесплатные генерации сегодня
             </p>
             
-            <div className="mb-6 rounded-xl bg-gradient-to-r from-emerald-500/10 to-blue-500/10 p-4">
-              <div className="mb-2 text-3xl font-bold text-white">
-                <span className="text-emerald-400">199₽</span>
-                <span className="ml-2 text-lg text-white/60 line-through">299₽</span>
+            <div className="mb-6 space-y-3">
+              {/* Первый месяц со скидкой */}
+              <div className="rounded-xl bg-gradient-to-r from-emerald-500/10 to-blue-500/10 p-4 border border-emerald-500/20">
+                <div className="mb-2 text-3xl font-bold text-white">
+                  <span className="text-emerald-400">199₽</span>
+                  <span className="ml-2 text-lg text-white/60 line-through">299₽</span>
+                </div>
+                <p className="text-sm text-white/80 mb-3">Первый месяц со скидкой 33%</p>
+                <button
+                  onClick={() => createPayment('pro-first')}
+                  disabled={creatingPayment}
+                  className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 px-6 py-3 font-semibold text-white transition-transform hover:scale-105 disabled:opacity-50"
+                >
+                  {creatingPayment ? 'Создаём платёж...' : 'Получить PRO со скидкой'}
+                </button>
               </div>
-              <p className="text-sm text-white/80">Первый месяц со скидкой 33%</p>
-              <p className="mt-2 text-xs text-white/60">Безлимитные генерации • Приоритетная поддержка</p>
+
+              {/* Обычная цена */}
+              <div className="rounded-xl bg-white/5 p-4 border border-white/10">
+                <div className="mb-2 text-2xl font-bold text-white">299₽</div>
+                <p className="text-sm text-white/60 mb-3">Обычная цена за месяц</p>
+                <button
+                  onClick={() => createPayment('pro')}
+                  disabled={creatingPayment}
+                  className="w-full rounded-xl bg-white/10 px-6 py-2.5 font-medium text-white transition-colors hover:bg-white/20 disabled:opacity-50"
+                >
+                  {creatingPayment ? 'Создаём платёж...' : 'Купить PRO'}
+                </button>
+              </div>
             </div>
 
-            <a
-              href="https://t.me/ТВОЙ_НИК"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 px-6 py-3 font-semibold text-white transition-transform hover:scale-105"
-            >
-              Получить PRO доступ
-            </a>
+            <div className="mb-4 space-y-2 text-left">
+              <p className="text-xs text-white/60 flex items-center gap-2">
+                <span className="text-emerald-400">✓</span> Безлимитные генерации
+              </p>
+              <p className="text-xs text-white/60 flex items-center gap-2">
+                <span className="text-emerald-400">✓</span> Приоритетная поддержка
+              </p>
+              <p className="text-xs text-white/60 flex items-center gap-2">
+                <span className="text-emerald-400">✓</span> Доступ ко всем маркетплейсам
+              </p>
+            </div>
             
             <p className="mt-4 text-xs text-white/50">
               Лимит обновится через {Math.ceil((24 * 60 * 60 * 1000 - (Date.now() - parseInt(localStorage.getItem('descro_reset_at') || '0'))) / (60 * 60 * 1000))} ч

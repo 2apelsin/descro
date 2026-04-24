@@ -28,6 +28,9 @@ GIGACHAT_CLIENT_SECRET=MDE5ZGJiMzUtOTI4MS03MWNkLTk1NzQtM2QyYjFkZTRjY2ZhOjljMWNmN
 NODE_TLS_REJECT_UNAUTHORIZED=0
 JWT_SECRET=descro_jwt_secret_change_this_to_random_string_min_32_chars
 TELEGRAM_BOT_TOKEN=8637559443:AAFYBo5VqNDYb2QW4k8XRDtuyOCtXZkoKSU
+NEXT_PUBLIC_APP_URL=https://descro-production.up.railway.app
+YOOKASSA_SHOP_ID=your_shop_id_here
+YOOKASSA_SECRET_KEY=your_secret_key_here
 ```
 
 5. Сохранить

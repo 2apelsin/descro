@@ -21,7 +21,7 @@ export default function RequisitesPage() {
 
               <div>
                 <h3 className="mb-1 text-sm font-medium text-slate-500">ИНН</h3>
-                <p className="text-lg text-slate-900">[Ваш ИНН]</p>
+                <p className="text-lg text-slate-900">132610362688</p>
               </div>
 
               <div>
