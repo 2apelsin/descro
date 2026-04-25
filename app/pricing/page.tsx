@@ -6,6 +6,9 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import Link from 'next/link'
 
+// Отключаем SSR для этой страницы
+export const dynamic = 'force-dynamic'
+
 export default function PricingPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -14,10 +17,12 @@ export default function PricingPage() {
 
   useEffect(() => {
     // Инициализируем Supabase клиент на клиенте
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && 
+        process.env.NEXT_PUBLIC_SUPABASE_URL && 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const client = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
       setSupabase(client)
     }

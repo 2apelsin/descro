@@ -11,10 +11,12 @@ export function useAuth() {
 
   useEffect(() => {
     // Инициализируем Supabase только на клиенте
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && 
+        process.env.NEXT_PUBLIC_SUPABASE_URL && 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const client = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
       setSupabase(client)
     }
