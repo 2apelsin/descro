@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { getSupabaseClient } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase'
 
 export function SimpleAuth() {
   const [email, setEmail] = useState('')
@@ -12,13 +12,6 @@ export function SimpleAuth() {
     e.preventDefault()
     setLoading(true)
     setMessage('')
-
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      setMessage('Ошибка инициализации')
-      setLoading(false)
-      return
-    }
 
     try {
       const { error } = await supabase.auth.signInWithOtp({

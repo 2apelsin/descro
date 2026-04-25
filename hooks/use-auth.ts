@@ -1,47 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export function useAuth() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [supabase, setSupabase] = useState<any>(null)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    // Инициализируем Supabase только на клиенте
-    if (typeof window !== 'undefined' && 
-        process.env.NEXT_PUBLIC_SUPABASE_URL && 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const client = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      )
-      setSupabase(client)
-    }
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        loadProfile(session.user.id)
+      } else {
+        setProfile(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    if (supabase) {
-      checkAuth()
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          loadProfile(session.user.id)
-        } else {
-          setProfile(null)
-        }
-      })
-
-      return () => subscription.unsubscribe()
-    }
-  }, [supabase])
-
   const checkAuth = async () => {
-    if (!supabase) return
-    
     try {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
@@ -57,8 +40,6 @@ export function useAuth() {
   }
 
   const loadProfile = async (userId: string) => {
-    if (!supabase) return
-    
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -81,6 +62,6 @@ export function useAuth() {
     loading,
     isPro,
     generationsLeft,
-    refreshProfile: () => user && supabase && loadProfile(user.id)
+    refreshProfile: () => user && loadProfile(user.id)
   }
 }

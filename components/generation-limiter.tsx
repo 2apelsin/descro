@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getSupabaseClient } from '@/lib/supabase-client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { AuthModal } from './auth-modal'
 
 interface GenerationLimiterProps {
@@ -10,33 +10,22 @@ interface GenerationLimiterProps {
   botUsername: string
 }
 
-export function GenerationLimiter({
-  children,
-  onGenerationAttempt,
-  botUsername,
-}: GenerationLimiterProps) {
+export function GenerationLimiter({ children, onGenerationAttempt, botUsername }: GenerationLimiterProps) {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [guestGenerations, setGuestGenerations] = useState(3)
   const [isBlocked, setIsBlocked] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     checkAuth()
   }, [])
 
   const checkAuth = async () => {
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
       if (user) {
@@ -72,9 +61,6 @@ export function GenerationLimiter({
   }
 
   const handleGeneration = async () => {
-    const supabase = getSupabaseClient()
-    if (!supabase) return
-
     const success = await onGenerationAttempt()
     
     if (success) {
