@@ -78,6 +78,7 @@ export function SiteHeader() {
             </Link>
           )}
         </div>
+      </div>
     </header>
   )
 }
