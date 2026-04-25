@@ -70,31 +70,14 @@ export function SiteHeader() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowAuth(!showAuth)}
+            <Link
+              href="/login"
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
               Войти
-            </button>
+            </Link>
           )}
         </div>
-      </div>
-
-      {/* Модальное окно входа */}
-      {showAuth && !user && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAuth(false)}>
-          <div className="relative rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowAuth(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
-            >
-              ✕
-            </button>
-            <h2 className="mb-4 text-xl font-bold text-slate-900">Вход в Descro</h2>
-            <SimpleAuth />
-          </div>
-        </div>
-      )}
     </header>
   )
 }
