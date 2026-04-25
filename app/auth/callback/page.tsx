@@ -2,18 +2,26 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase-client'
 
 export default function AuthCallback() {
   const router = useRouter()
 
   useEffect(() => {
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      router.push('/')
+      return
+    }
+
     // Обрабатываем callback от Supabase Auth
-    supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
       if (event === 'SIGNED_IN') {
         router.push('/')
       }
     })
+
+    return () => subscription.unsubscribe()
   }, [router])
 
   return (
