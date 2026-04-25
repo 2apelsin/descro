@@ -1,8 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { AuthModal } from './auth-modal'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface AuthWrapperProps {
   children: React.ReactNode
@@ -12,7 +17,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     checkAuth()
