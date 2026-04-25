@@ -4,11 +4,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AuthModal } from './auth-modal'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 interface GenerationLimiterProps {
   children: React.ReactNode
   onGenerationAttempt: () => Promise<boolean>
@@ -22,12 +17,28 @@ export function GenerationLimiter({ children, onGenerationAttempt, botUsername }
   const [isBlocked, setIsBlocked] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
-    checkAuth()
+    // Инициализируем Supabase только на клиенте
+    if (typeof window !== 'undefined') {
+      const client = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      setSupabase(client)
+    }
   }, [])
 
+  useEffect(() => {
+    if (supabase) {
+      checkAuth()
+    }
+  }, [supabase])
+
   const checkAuth = async () => {
+    if (!supabase) return
+    
     try {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
@@ -65,6 +76,8 @@ export function GenerationLimiter({ children, onGenerationAttempt, botUsername }
   }
 
   const handleGeneration = async () => {
+    if (!supabase) return
+    
     const success = await onGenerationAttempt()
     
     if (success) {

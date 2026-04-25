@@ -4,11 +4,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { X } from 'lucide-react'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
@@ -19,9 +14,21 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
-    if (isOpen && typeof window !== 'undefined') {
+    // Инициализируем Supabase только на клиенте
+    if (typeof window !== 'undefined') {
+      const client = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      setSupabase(client)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && supabase && typeof window !== 'undefined') {
       // Глобальная функция для обработки Telegram авторизации
       (window as any).handleTelegramAuth = async (user: any) => {
         try {
@@ -65,10 +72,16 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
         container.appendChild(script)
       }
     }
-  }, [isOpen, botUsername, onClose, supabase.auth])
+  }, [isOpen, botUsername, onClose, supabase])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) {
+      setMessage('❌ Ошибка инициализации')
+      return
+    }
+    
     setLoading(true)
     setMessage('')
 
