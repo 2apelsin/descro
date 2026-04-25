@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 import { AuthModal } from './auth-modal'
 
 interface GenerationLimiterProps {
@@ -17,7 +17,6 @@ export function GenerationLimiter({ children, onGenerationAttempt, botUsername }
   const [isBlocked, setIsBlocked] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [loading, setLoading] = useState(true)
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     checkAuth()

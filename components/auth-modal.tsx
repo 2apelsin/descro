@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 import { X } from 'lucide-react'
 
 interface AuthModalProps {
@@ -14,7 +14,6 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined') {
