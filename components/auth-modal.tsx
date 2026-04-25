@@ -12,6 +12,9 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [mode, setMode] = useState<'magic-link' | 'password'>('magic-link')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [supabase, setSupabase] = useState<any>(null)
@@ -88,17 +91,48 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
     setMessage('')
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+      if (mode === 'magic-link') {
+        // Вход по ссылке из email
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        })
+
+        if (error) throw error
+
+        setMessage('✅ Ссылка отправлена на email. Проверьте папку Спам')
+        setEmail('')
+      } else {
+        // Вход с паролем
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+
+        if (error) {
+          // Если пользователя нет - создаём
+          if (error.message.includes('Invalid login credentials')) {
+            const { error: signUpError } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback`
+              }
+            })
+            
+            if (signUpError) throw signUpError
+            
+            setMessage('✅ Аккаунт создан! Проверьте email для подтверждения')
+          } else {
+            throw error
+          }
+        } else {
+          onClose()
+          window.location.reload()
         }
-      })
-
-      if (error) throw error
-
-      setMessage('✅ Ссылка отправлена на email. Проверьте папку Спам')
-      setEmail('')
+      }
     } catch (error: any) {
       setMessage(`❌ ${error.message}`)
     } finally {
@@ -145,6 +179,33 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
 
         {/* Email Login */}
         <form onSubmit={handleEmailLogin} className="space-y-4">
+          {/* Переключатель режима */}
+          <div className="flex gap-2 p-1 bg-[#0a0a0f] rounded-lg">
+            <button
+              type="button"
+              onClick={() => setMode('magic-link')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                mode === 'magic-link'
+                  ? 'bg-[#7c3aed] text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Magic Link
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('password')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                mode === 'password'
+                  ? 'bg-[#7c3aed] text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              С паролем
+            </button>
+          </div>
+
+          {/* Email поле */}
           <input
             type="email"
             value={email}
@@ -153,13 +214,60 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
             required
             className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
           />
+
+          {/* Поле пароля (только для режима password) */}
+          {mode === 'password' && (
+            <div className="space-y-2">
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Пароль"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 pr-12 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+                />
+                {/* Кнопка глазик */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {/* Счётчик символов */}
+              <div className="flex items-center justify-between text-xs">
+                <span className={`${
+                  password.length >= 6 ? 'text-green-400' : 'text-gray-500'
+                }`}>
+                  {password.length >= 6 ? '✓ Минимум 6 символов' : 'Минимум 6 символов'}
+                </span>
+                <span className={`${
+                  password.length >= 6 ? 'text-green-400' : password.length > 0 ? 'text-yellow-400' : 'text-gray-500'
+                }`}>
+                  {password.length}/6
+                </span>
+              </div>
+            </div>
+          )}
           
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (mode === 'password' && password.length < 6)}
             className="w-full px-6 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? 'Отправка...' : 'Получить ссылку для входа'}
+            {loading ? 'Загрузка...' : mode === 'magic-link' ? 'Получить ссылку' : 'Войти / Создать аккаунт'}
           </button>
         </form>
 
