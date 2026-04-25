@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import { X } from 'lucide-react'
+import { X, Eye, EyeOff } from 'lucide-react'
+import { getSupabaseClient } from '@/lib/supabase-client'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -17,76 +17,65 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
   const [mode, setMode] = useState<'magic-link' | 'password'>('magic-link')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
-    // Инициализируем Supabase только на клиенте
-    if (typeof window !== 'undefined' && 
-        process.env.NEXT_PUBLIC_SUPABASE_URL && 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const client = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      )
-      setSupabase(client)
-    }
-  }, [])
+    if (!isOpen) return
 
-  useEffect(() => {
-    if (isOpen && supabase && typeof window !== 'undefined') {
-      // Глобальная функция для обработки Telegram авторизации
-      (window as any).handleTelegramAuth = async (user: any) => {
-        try {
-          const response = await fetch('/api/auth/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(user)
+    const supabase = getSupabaseClient()
+    if (!supabase) return
+    // Глобальная функция для обработки Telegram авторизации
+    ;(window as any).handleTelegramAuth = async (user: any) => {
+      try {
+        const response = await fetch('/api/auth/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user),
+        })
+
+        const data = await response.json()
+
+        if (data.access_token && data.refresh_token) {
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
           })
 
-          const data = await response.json()
-
-          if (data.access_token && data.refresh_token) {
-            await supabase.auth.setSession({
-              access_token: data.access_token,
-              refresh_token: data.refresh_token
-            })
-            
-            onClose()
-            window.location.reload()
-          } else {
-            setMessage('Ошибка входа через Telegram')
-          }
-        } catch (error) {
-          console.error('Telegram auth error:', error)
+          onClose()
+          window.location.reload()
+        } else {
           setMessage('Ошибка входа через Telegram')
         }
-      }
-
-      // Загружаем Telegram Widget скрипт
-      const script = document.createElement('script')
-      script.src = 'https://telegram.org/js/telegram-widget.js?22'
-      script.async = true
-      script.setAttribute('data-telegram-login', botUsername)
-      script.setAttribute('data-size', 'large')
-      script.setAttribute('data-onauth', 'handleTelegramAuth(user)')
-      script.setAttribute('data-request-access', 'write')
-      
-      const container = document.getElementById('telegram-login-container')
-      if (container) {
-        container.innerHTML = ''
-        container.appendChild(script)
+      } catch (error) {
+        console.error('Telegram auth error:', error)
+        setMessage('Ошибка входа через Telegram')
       }
     }
-  }, [isOpen, botUsername, onClose, supabase])
+
+    // Загружаем Telegram Widget скрипт
+    const script = document.createElement('script')
+    script.src = 'https://telegram.org/js/telegram-widget.js?22'
+    script.async = true
+    script.setAttribute('data-telegram-login', botUsername)
+    script.setAttribute('data-size', 'large')
+    script.setAttribute('data-onauth', 'handleTelegramAuth(user)')
+    script.setAttribute('data-request-access', 'write')
+
+    const container = document.getElementById('telegram-login-container')
+    if (container) {
+      container.innerHTML = ''
+      container.appendChild(script)
+    }
+  }, [isOpen, botUsername, onClose])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    const supabase = getSupabaseClient()
     if (!supabase) {
       setMessage('❌ Ошибка инициализации')
       return
     }
-    
+
     setLoading(true)
     setMessage('')
 
@@ -96,8 +85,8 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`
-          }
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         })
 
         if (error) throw error
@@ -108,7 +97,7 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
         // Вход с паролем
         const { error } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
         })
 
         if (error) {
@@ -118,12 +107,12 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
               email,
               password,
               options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback`
-              }
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
+              },
             })
-            
+
             if (signUpError) throw signUpError
-            
+
             setMessage('✅ Аккаунт создан! Проверьте email для подтверждения')
           } else {
             throw error
@@ -233,16 +222,12 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
                 >
                   {showPassword ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
+                    <EyeOff className="w-5 h-5" />
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>

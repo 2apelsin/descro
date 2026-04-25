@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase-client'
 import { AuthModal } from './auth-modal'
 
 interface GenerationLimiterProps {
@@ -10,39 +10,33 @@ interface GenerationLimiterProps {
   botUsername: string
 }
 
-export function GenerationLimiter({ children, onGenerationAttempt, botUsername }: GenerationLimiterProps) {
+export function GenerationLimiter({
+  children,
+  onGenerationAttempt,
+  botUsername,
+}: GenerationLimiterProps) {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [guestGenerations, setGuestGenerations] = useState(3)
   const [isBlocked, setIsBlocked] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
-    // Инициализируем Supabase только на клиенте
-    if (typeof window !== 'undefined' && 
-        process.env.NEXT_PUBLIC_SUPABASE_URL && 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      const client = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      )
-      setSupabase(client)
-    }
+    checkAuth()
   }, [])
 
-  useEffect(() => {
-    if (supabase) {
-      checkAuth()
-    }
-  }, [supabase])
-
   const checkAuth = async () => {
-    if (!supabase) return
-    
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       setUser(user)
 
       if (user) {
@@ -78,8 +72,9 @@ export function GenerationLimiter({ children, onGenerationAttempt, botUsername }
   }
 
   const handleGeneration = async () => {
+    const supabase = getSupabaseClient()
     if (!supabase) return
-    
+
     const success = await onGenerationAttempt()
     
     if (success) {
