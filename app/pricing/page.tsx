@@ -1,51 +1,55 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { AuthModal } from '@/components/auth-modal'
 import Link from 'next/link'
 
 export default function PricingPage() {
   const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [showAuth, setShowAuth] = useState(false)
 
   useEffect(() => {
     checkAuth()
   }, [])
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const token = localStorage.getItem('descro_token')
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      setProfile(profile)
+    if (token) {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+      }
     }
   }
 
   const handlePurchase = async () => {
-    if (!user) {
-      alert('Пожалуйста, войдите в аккаунт')
+    const token = localStorage.getItem('descro_token')
+
+    if (!token) {
+      setShowAuth(true)
       return
     }
 
     setLoading(true)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
       const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
 
       const data = await response.json()
@@ -63,7 +67,7 @@ export default function PricingPage() {
     }
   }
 
-  const isPro = profile?.pro_until && new Date(profile.pro_until) > new Date()
+  const isPro = user?.pro_until && new Date(user.pro_until) > new Date()
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
@@ -157,7 +161,7 @@ export default function PricingPage() {
 
               {isPro ? (
                 <div className="w-full px-6 py-3 bg-green-600 text-white font-semibold rounded-xl text-center">
-                  ✓ Активно до {new Date(profile.pro_until).toLocaleDateString('ru-RU')}
+                  ✓ Активно до {new Date(user.pro_until).toLocaleDateString('ru-RU')}
                 </div>
               ) : (
                 <button
@@ -184,6 +188,7 @@ export default function PricingPage() {
       </div>
 
       <SiteFooter />
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   )
 }
