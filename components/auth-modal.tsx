@@ -72,7 +72,7 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
 
     const supabase = getSupabaseClient()
     if (!supabase) {
-      setMessage('❌ Ошибка инициализации')
+      setMessage('Ошибка инициализации')
       return
     }
 
@@ -89,9 +89,13 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
           },
         })
 
-        if (error) throw error
+        if (error) {
+          console.error('Magic link error:', error)
+          setMessage('Ошибка отправки ссылки')
+          return
+        }
 
-        setMessage('✅ Ссылка отправлена на email. Проверьте папку Спам')
+        setMessage('Ссылка отправлена на email. Проверьте папку Спам')
         setEmail('')
       } else {
         // Вход с паролем
@@ -102,7 +106,10 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
 
         if (error) {
           // Если пользователя нет - создаём
-          if (error.message.includes('Invalid login credentials')) {
+          if (
+            error.message.includes('Invalid login credentials') ||
+            error.message.includes('Invalid')
+          ) {
             const { error: signUpError } = await supabase.auth.signUp({
               email,
               password,
@@ -111,11 +118,17 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
               },
             })
 
-            if (signUpError) throw signUpError
+            if (signUpError) {
+              console.error('Sign up error:', signUpError)
+              setMessage('Ошибка создания аккаунта')
+              return
+            }
 
-            setMessage('✅ Аккаунт создан! Проверьте email для подтверждения')
+            setMessage('Аккаунт создан! Проверьте email для подтверждения')
           } else {
-            throw error
+            console.error('Sign in error:', error)
+            setMessage('Ошибка входа')
+            return
           }
         } else {
           onClose()
@@ -123,7 +136,8 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
         }
       }
     } catch (error: any) {
-      setMessage(`❌ ${error.message}`)
+      console.error('Auth error:', error)
+      setMessage('Произошла ошибка')
     } finally {
       setLoading(false)
     }
