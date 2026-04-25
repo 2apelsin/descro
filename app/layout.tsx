@@ -1,8 +1,7 @@
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/lib/auth-context"
-import "./globals.css"
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { AuthProvider } from '@/lib/auth-context'
+import './globals.css'
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -47,10 +46,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${inter.variable} bg-background`}>
       <body className="font-sans antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )
