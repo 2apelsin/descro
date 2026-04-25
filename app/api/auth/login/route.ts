@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 const supabase = createClient(
@@ -9,33 +10,30 @@ const supabase = createClient(
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Не авторизован' }, { status: 401 })
+    const { email, password } = await req.json()
+
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email и пароль обязательны' }, { status: 400 })
     }
 
-    const token = authHeader.substring(7)
-    
-    // Проверяем токен
-    let payload: any
-    try {
-      payload = jwt.verify(token, JWT_SECRET)
-    } catch {
-      return NextResponse.json({ success: false, error: 'Неверный токен' }, { status: 401 })
-    }
-
-    // Получаем пользователя
+    // Находим пользователя
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('id', payload.userId)
+      .eq('email', email)
       .single()
 
     if (error || !user) {
-      return NextResponse.json({ success: false, error: 'Пользователь не найден' }, { status: 404 })
+      return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 })
+    }
+
+    // Проверяем пароль
+    const validPassword = await bcrypt.compare(password, user.password_hash)
+
+    if (!validPassword) {
+      return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 })
     }
 
     // Проверяем нужно ли сбросить счётчик (прошло 24 часа)
@@ -55,20 +53,22 @@ export async function GET(req: NextRequest) {
       user.last_reset = new Date().toISOString()
     }
 
+    // Создаём токен
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' })
+
     return NextResponse.json({
       success: true,
+      token,
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         generations_left: user.generations_left,
-        pro_until: user.pro_until,
-        last_reset: user.last_reset,
-        created_at: user.created_at
+        pro_until: user.pro_until
       }
     })
   } catch (error) {
-    console.error('[Auth/Me] Error:', error)
-    return NextResponse.json({ success: false, error: 'Ошибка сервера' }, { status: 500 })
+    console.error('Login error:', error)
+    return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 })
   }
 }

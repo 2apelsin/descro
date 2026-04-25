@@ -16,10 +16,14 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.replace('Bearer ', '')
     
-    // Проверяем пользователя
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
+    // Получаем пользователя из базы
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', token)
+      .single()
+
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -30,26 +34,29 @@ export async function POST(request: NextRequest) {
 
     const paymentData = {
       amount: {
-        value: '299.00',
-        currency: 'RUB'
+        value: '199.00',
+        currency: 'RUB',
       },
       capture: true,
       confirmation: {
         type: 'redirect',
-        return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://descro-production.up.railway.app'}/payment/success`
+        return_url: `${
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          'https://descro-production.up.railway.app'
+        }/dashboard`,
       },
-      description: 'PRO доступ на 1 месяц',
+      description: 'PRO подписка на 1 месяц',
       metadata: {
-        user_id: user.id
-      }
+        user_id: user.id,
+      },
     }
 
     const response = await fetch('https://api.yookassa.ru/v3/payments', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         'Content-Type': 'application/json',
-        'Idempotence-Key': `${user.id}-${Date.now()}`
+        'Idempotence-Key': `${user.id}-${Date.now()}`,
       },
       body: JSON.stringify(paymentData)
     })

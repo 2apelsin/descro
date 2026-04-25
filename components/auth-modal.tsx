@@ -1,86 +1,49 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  botUsername: string
 }
 
-export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    if (isOpen && typeof window !== 'undefined') {
-      // Глобальная функция для обработки Telegram авторизации
-      (window as any).handleTelegramAuth = async (user: any) => {
-        try {
-          const response = await fetch('/api/auth/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(user)
-          })
-
-          const data = await response.json()
-
-          if (data.access_token && data.refresh_token) {
-            await supabase.auth.setSession({
-              access_token: data.access_token,
-              refresh_token: data.refresh_token
-            })
-            
-            onClose()
-            window.location.reload()
-          } else {
-            setMessage('Ошибка входа через Telegram')
-          }
-        } catch (error) {
-          console.error('Telegram auth error:', error)
-          setMessage('Ошибка входа через Telegram')
-        }
-      }
-
-      // Загружаем Telegram Widget скрипт
-      const script = document.createElement('script')
-      script.src = 'https://telegram.org/js/telegram-widget.js?22'
-      script.async = true
-      script.setAttribute('data-telegram-login', botUsername)
-      script.setAttribute('data-size', 'large')
-      script.setAttribute('data-onauth', 'handleTelegramAuth(user)')
-      script.setAttribute('data-request-access', 'write')
-      
-      const container = document.getElementById('telegram-login-container')
-      if (container) {
-        container.innerHTML = ''
-        container.appendChild(script)
-      }
-    }
-  }, [isOpen, botUsername, onClose, supabase.auth])
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
+      const body = isLogin 
+        ? { email, password }
+        : { email, password, name }
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
       })
 
-      if (error) throw error
+      const data = await res.json()
 
-      setMessage('✅ Ссылка отправлена на email. Проверьте папку Спам')
-      setEmail('')
-    } catch (error: any) {
-      setMessage(`❌ ${error.message}`)
+      if (res.ok && data.token) {
+        localStorage.setItem('descro_token', data.token)
+        onClose()
+        window.location.reload()
+      } else {
+        setMessage(data.error || 'Ошибка')
+      }
+    } catch (error) {
+      setMessage('Ошибка сервера')
     } finally {
       setLoading(false)
     }
@@ -90,15 +53,12 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/85 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal Card */}
       <div className="relative bg-[#1a1a1a] rounded-2xl max-w-[420px] w-full p-8 border border-[#333] shadow-2xl">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -106,31 +66,37 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
           <X className="w-6 h-6" />
         </button>
 
-        {/* Title */}
         <h2 className="text-2xl font-bold text-white text-center mb-6">
-          Войти в ваш аккаунт
+          {isLogin ? 'Вход' : 'Регистрация'}
         </h2>
 
-        {/* Telegram Login */}
-        <div className="flex justify-center mb-6">
-          <div id="telegram-login-container" />
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-px bg-gray-700" />
-          <span className="text-sm text-gray-500">или</span>
-          <div className="flex-1 h-px bg-gray-700" />
-        </div>
-
-        {/* Email Login */}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ваше имя"
+              className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+            />
+          )}
+          
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Ваш email"
+            placeholder="Email"
             required
+            className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+          />
+          
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Пароль"
+            required
+            minLength={6}
             className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
           />
           
@@ -139,21 +105,25 @@ export function AuthModal({ isOpen, onClose, botUsername }: AuthModalProps) {
             disabled={loading}
             className="w-full px-6 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? 'Отправка...' : 'Получить ссылку для входа'}
+            {loading ? 'Загрузка...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
           </button>
         </form>
 
-        {/* Message */}
         {message && (
-          <p className="mt-4 text-sm text-center text-gray-300">
+          <p className="mt-4 text-sm text-center text-red-400">
             {message}
           </p>
         )}
 
-        {/* Footer */}
-        <p className="mt-6 text-sm text-gray-500 text-center">
-          Нет аккаунта? Создастся автоматически
-        </p>
+        <button
+          onClick={() => {
+            setIsLogin(!isLogin)
+            setMessage('')
+          }}
+          className="mt-6 w-full text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          {isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}
+        </button>
       </div>
     </div>
   )

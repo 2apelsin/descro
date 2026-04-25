@@ -22,21 +22,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true })
       }
 
-      // Обновляем профиль пользователя - добавляем 30 дней PRO
+      // Активируем PRO подписку на 30 дней
       const proUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      
+
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
           pro_until: proUntil.toISOString(),
-          generations_left: 999 // Даём большой лимит для PRO
         })
         .eq('id', userId)
 
       if (error) {
-        console.error('Failed to update user profile:', error)
+        console.error('Failed to activate PRO:', error)
       } else {
-        console.log(`PRO activated for user ${userId} until ${proUntil}`)
+        console.log(
+          `✅ PRO активирован для пользователя ${userId} до ${proUntil.toLocaleDateString(
+            'ru-RU'
+          )}`
+        )
       }
     }
 

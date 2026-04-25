@@ -53,7 +53,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        botUsername={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || ''}
       />
     </>
   )
