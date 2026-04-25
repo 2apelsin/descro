@@ -1,104 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import crypto from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
-const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.text()
-    const notification = JSON.parse(body)
-
-    // Проверяем подпись (опционально, но рекомендуется)
-    // ЮKassa отправляет IP-адреса: 185.71.76.0/27, 185.71.77.0/27, 77.75.153.0/25, 77.75.156.11, 77.75.156.35, 2a02:5180::/32
+    const body = await request.json()
     
-    console.log('[Webhook] Received notification:', notification.event)
+    console.log('YooKassa webhook received:', body)
 
-    // Обрабатываем только успешные платежи
-    if (notification.event === 'payment.succeeded') {
-      const payment = notification.object
-      const telegramId = parseInt(payment.metadata.telegram_id)
-      const plan = payment.metadata.plan
+    // Проверяем, что это успешный платёж
+    if (body.event === 'payment.succeeded' && body.object) {
+      const payment = body.object
+      const userId = payment.metadata?.user_id
 
-      console.log('[Webhook] Payment succeeded for user:', telegramId)
-
-      // Определяем срок действия PRO
-      const now = new Date()
-      let proUntil: Date
-
-      if (plan === 'pro-first' || plan === 'pro') {
-        // 1 месяц
-        proUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-      } else {
-        proUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      if (!userId) {
+        console.error('No user_id in payment metadata')
+        return NextResponse.json({ received: true })
       }
 
-      // Обновляем пользователя в базе
-      const { data: user, error: fetchError } = await supabase
-        .from('teleg')
-        .select('*')
-        .eq('telegram_id', telegramId)
-        .single()
+      // Обновляем профиль пользователя - добавляем 30 дней PRO
+      const proUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          pro_until: proUntil.toISOString(),
+          generations_left: 999 // Даём большой лимит для PRO
+        })
+        .eq('id', userId)
 
-      if (fetchError || !user) {
-        console.error('[Webhook] User not found:', telegramId)
-        // Создаём пользователя если его нет
-        await supabase
-          .from('teleg')
-          .insert({
-            telegram_id: telegramId,
-            username: null,
-            first_name: null,
-            generations_left: 999999, // Безлимит для PRO
-            last_reset: now.toISOString(),
-            pro_until: proUntil.toISOString(),
-            created_at: now.toISOString()
-          })
+      if (error) {
+        console.error('Failed to update user profile:', error)
       } else {
-        // Обновляем существующего пользователя
-        await supabase
-          .from('teleg')
-          .update({
-            pro_until: proUntil.toISOString(),
-            generations_left: 999999 // Безлимит для PRO
-          })
-          .eq('telegram_id', telegramId)
+        console.log(`PRO activated for user ${userId} until ${proUntil}`)
       }
-
-      console.log('[Webhook] ✓ User upgraded to PRO until:', proUntil)
-
-      // Можно отправить уведомление в Telegram
-      // await sendTelegramNotification(telegramId, 'Спасибо за покупку! PRO активирован 🎉')
     }
 
-    return NextResponse.json({ success: true })
-
-  } catch (error: any) {
-    console.error('[Webhook] Error:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
-  }
-}
-
-// Функция для отправки уведомления в Telegram (опционально)
-async function sendTelegramNotification(telegramId: number, message: string) {
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
-  
-  if (!TELEGRAM_BOT_TOKEN) return
-
-  try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text: message,
-        parse_mode: 'HTML'
-      })
-    })
+    return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Failed to send Telegram notification:', error)
+    console.error('Webhook error:', error)
+    return NextResponse.json({ received: true }, { status: 200 })
   }
 }

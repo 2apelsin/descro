@@ -1,47 +1,39 @@
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
-import Link from "next/link"
-import { XCircle } from "lucide-react"
+import Link from 'next/link'
 
 export default function PaymentCancelPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <SiteHeader />
-      
-      <main className="mx-auto max-w-2xl px-4 py-24 text-center">
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 shadow-lg">
-          <div className="mb-6 flex justify-center">
-            <div className="rounded-full bg-slate-100 p-4">
-              <XCircle className="h-16 w-16 text-slate-600" />
-            </div>
-          </div>
-          
-          <h1 className="mb-4 text-3xl font-bold text-slate-900">
-            Оплата отменена
-          </h1>
-          
-          <p className="mb-8 text-lg text-slate-600">
-            Вы отменили оплату. Попробуйте снова, когда будете готовы.
-          </p>
-          
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/#pricing"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-8 py-3 font-semibold text-white hover:bg-slate-800"
-            >
-              Попробовать снова
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3 font-semibold text-slate-900 hover:bg-slate-50"
-            >
-              Вернуться на главную
-            </Link>
-          </div>
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#16161e] rounded-2xl p-8 text-center border border-[#333]">
+        <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </div>
-      </main>
-
-      <SiteFooter />
+        
+        <h1 className="text-3xl font-bold text-white mb-4">
+          Оплата отменена
+        </h1>
+        
+        <p className="text-gray-300 mb-8">
+          Вы можете попробовать снова в любое время
+        </p>
+        
+        <div className="space-y-3">
+          <Link
+            href="/pricing"
+            className="block px-8 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Попробовать снова
+          </Link>
+          
+          <Link
+            href="/"
+            className="block px-8 py-3 bg-[#1a1a1a] text-white font-semibold rounded-xl hover:bg-[#222] transition-colors border border-[#333]"
+          >
+            Вернуться на главную
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

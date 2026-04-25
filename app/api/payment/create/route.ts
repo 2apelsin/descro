@@ -1,98 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
-import { randomUUID } from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
-const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID
-const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Проверяем авторизацию
-    const authHeader = req.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'Требуется авторизация' },
-        { status: 401 }
-      )
+    // Получаем токен из заголовка
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    const payload = await verifyToken(token)
+    const token = authHeader.replace('Bearer ', '')
     
-    if (!payload) {
-      return NextResponse.json(
-        { success: false, error: 'Неверный токен' },
-        { status: 401 }
-      )
-    }
-
-    const { plan } = await req.json()
+    // Проверяем пользователя
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
-    // Определяем цену в зависимости от плана
-    const prices: Record<string, { amount: string; description: string }> = {
-      'pro-first': {
-        amount: '199.00',
-        description: 'Descro PRO — первый месяц (скидка 33%)'
-      },
-      'pro': {
-        amount: '299.00',
-        description: 'Descro PRO — 1 месяц'
-      }
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const priceData = prices[plan] || prices['pro']
 
     // Создаём платёж в ЮKassa
-    const idempotenceKey = randomUUID()
-    
+    const shopId = process.env.YOOKASSA_SHOP_ID!
+    const secretKey = process.env.YOOKASSA_SECRET_KEY!
+    const auth = Buffer.from(`${shopId}:${secretKey}`).toString('base64')
+
     const paymentData = {
       amount: {
-        value: priceData.amount,
+        value: '299.00',
         currency: 'RUB'
       },
+      capture: true,
       confirmation: {
         type: 'redirect',
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://descro-production.up.railway.app'}/payment/success`
+        return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://descro-production.up.railway.app'}/payment/success`
       },
-      capture: true,
-      description: priceData.description,
+      description: 'PRO доступ на 1 месяц',
       metadata: {
-        telegram_id: payload.telegram_id.toString(),
-        plan: plan
+        user_id: user.id
       }
     }
-
-    const auth = Buffer.from(`${YOOKASSA_SHOP_ID}:${YOOKASSA_SECRET_KEY}`).toString('base64')
 
     const response = await fetch('https://api.yookassa.ru/v3/payments', {
       method: 'POST',
       headers: {
+        'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/json',
-        'Idempotence-Key': idempotenceKey,
-        'Authorization': `Basic ${auth}`
+        'Idempotence-Key': `${user.id}-${Date.now()}`
       },
       body: JSON.stringify(paymentData)
     })
 
-    if (!response.ok) {
-      const error = await response.text()
-      console.error('YooKassa error:', error)
-      throw new Error('Ошибка создания платежа')
-    }
-
     const payment = await response.json()
 
+    if (!response.ok) {
+      console.error('YooKassa error:', payment)
+      return NextResponse.json(
+        { error: 'Payment creation failed' },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json({
-      success: true,
-      paymentUrl: payment.confirmation.confirmation_url,
-      paymentId: payment.id
+      confirmation_url: payment.confirmation.confirmation_url,
+      payment_id: payment.id
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Payment creation error:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Ошибка создания платежа' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

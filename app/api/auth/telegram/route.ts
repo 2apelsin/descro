@@ -1,76 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
-import { createToken, verifyTelegramAuth } from '@/lib/auth'
+import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
-export async function POST(req: NextRequest) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
+
+function verifyTelegramAuth(data: any): boolean {
+  const { hash, ...authData } = data
+  const botToken = process.env.TELEGRAM_BOT_TOKEN!
+  
+  // Создаём строку для проверки
+  const checkString = Object.keys(authData)
+    .sort()
+    .map(key => `${key}=${authData[key]}`)
+    .join('\n')
+  
+  // Вычисляем hash
+  const secretKey = crypto.createHash('sha256').update(botToken).digest()
+  const hmac = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex')
+  
+  return hmac === hash
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json()
-    const { id, first_name, username, hash, auth_date } = body
-
-    if (!id || !hash) {
-      return NextResponse.json({ success: false, error: 'Неверные данные' }, { status: 400 })
-    }
-
+    const telegramData = await request.json()
+    
     // Проверяем подпись Telegram
-    const botToken = process.env.TELEGRAM_BOT_TOKEN!
-    const isValid = verifyTelegramAuth(body, botToken)
-
-    if (!isValid) {
-      return NextResponse.json({ success: false, error: 'Неверная подпись' }, { status: 403 })
+    if (!verifyTelegramAuth(telegramData)) {
+      return NextResponse.json(
+        { error: 'Invalid Telegram authentication' },
+        { status: 401 }
+      )
     }
 
-    // Проверяем что auth_date не старше 24 часов
-    const authTime = parseInt(auth_date) * 1000
-    if (Date.now() - authTime > 24 * 60 * 60 * 1000) {
-      return NextResponse.json({ success: false, error: 'Авторизация устарела' }, { status: 403 })
-    }
+    const { id, first_name, username } = telegramData
+    
+    // Создаём email и пароль на основе Telegram ID
+    const email = `tg_${id}@descro.app`
+    const password = crypto
+      .createHash('sha256')
+      .update(`${id}${process.env.JWT_SECRET}`)
+      .digest('hex')
 
-    const telegram_id = parseInt(id)
+    // Пытаемся войти
+    let authResult = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
 
-    // Ищем пользователя
-    const { data: existingUser } = await supabaseAdmin
-      .from('teleg')
-      .select('*')
-      .eq('telegram_id', telegram_id)
-      .single()
+    // Если пользователя нет - создаём
+    if (authResult.error) {
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          telegram_id: id.toString(),
+          first_name,
+          username
+        }
+      })
 
-    if (existingUser) {
-      // Обновляем данные
-      await supabaseAdmin
-        .from('teleg')
+      if (createError) {
+        console.error('Create user error:', createError)
+        return NextResponse.json(
+          { error: 'Failed to create user' },
+          { status: 500 }
+        )
+      }
+
+      // Обновляем профиль с Telegram данными
+      await supabase
+        .from('profiles')
         .update({
-          username: username || null,
-          first_name: first_name || null,
+          telegram_id: id.toString(),
+          first_name,
+          username
         })
-        .eq('telegram_id', telegram_id)
-    } else {
-      // Создаём нового пользователя
-      await supabaseAdmin
-        .from('teleg')
-        .insert({
-          telegram_id,
-          username: username || null,
-          first_name: first_name || null,
-          generations_left: 3,
-          last_reset: new Date().toISOString(),
-          pro_until: null,
-        })
+        .eq('id', newUser.user!.id)
+
+      // Теперь входим
+      authResult = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
     }
 
-    // Создаём JWT токен
-    const token = await createToken({ telegram_id, username: username || null })
+    if (authResult.error || !authResult.data.session) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        telegram_id,
-        username: username || null,
-        first_name: first_name || null,
-      }
+      access_token: authResult.data.session.access_token,
+      refresh_token: authResult.data.session.refresh_token,
+      user: authResult.data.user
     })
+
   } catch (error) {
-    console.error('[Auth] Error:', error)
-    return NextResponse.json({ success: false, error: 'Ошибка авторизации' }, { status: 500 })
+    console.error('Telegram auth error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
