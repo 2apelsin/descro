@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { createToken, verifyTelegramAuth } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const telegram_id = parseInt(id)
 
     // Ищем пользователя
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from('teleg')
       .select('*')
       .eq('telegram_id', telegram_id)
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       // Обновляем данные
-      await supabase
+      await supabaseAdmin
         .from('teleg')
         .update({
           username: username || null,
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         .eq('telegram_id', telegram_id)
     } else {
       // Создаём нового пользователя
-      await supabase
+      await supabaseAdmin
         .from('teleg')
         .insert({
           telegram_id,
