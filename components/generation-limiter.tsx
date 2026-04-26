@@ -71,7 +71,7 @@ export function GenerationLimiter({ children, onGenerationAttempt }: GenerationL
               {user ? 'Оформите PRO для безлимитной генерации' : 'Войдите, чтобы продолжить'}
             </p>
             <button
-              onClick={() => window.location.href = user ? '/#pricing' : '/'}
+              onClick={() => window.location.href = user ? '/pricing' : '/'}
               className="px-8 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
             >
               {user ? 'Купить PRO — 199 ₽/мес' : 'Войти'}

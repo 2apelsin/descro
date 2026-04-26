@@ -269,7 +269,9 @@ export function DemoForm() {
     const token = localStorage.getItem('descro_token')
     
     if (!token) {
-      setToast({ message: "Сначала войдите через Telegram", type: "error" })
+      // Показываем модалку входа
+      setToast({ message: "Сначала войдите в аккаунт", type: "error" })
+      // Можно добавить открытие модалки входа
       return
     }
     
@@ -284,23 +286,25 @@ export function DemoForm() {
       const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ plan })
+        }
       })
       
       const data = await response.json()
       
-      if (!response.ok || !data.success) {
+      if (!response.ok) {
         throw new Error(data.error || 'Ошибка создания платежа')
       }
       
-      // Перенаправляем на страницу оплаты
-      window.location.href = data.paymentUrl
+      // Перенаправляем на страницу оплаты ЮKassa
+      if (data.confirmation_url) {
+        window.location.href = data.confirmation_url
+      } else {
+        throw new Error('Не получена ссылка на оплату')
+      }
     } catch (error) {
       console.error('Payment error:', error)
-      setToast({ message: 'Не удалось создать платёж', type: 'error' })
+      setToast({ message: error instanceof Error ? error.message : 'Не удалось создать платёж', type: 'error' })
     } finally {
       setCreatingPayment(false)
     }
