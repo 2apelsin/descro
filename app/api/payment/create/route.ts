@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const paymentData = {
       amount: {
-        value: '199.00',
+        value: '1.00', // Минимальная сумма для теста
         currency: 'RUB',
       },
       capture: true,
