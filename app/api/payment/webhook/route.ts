@@ -53,41 +53,30 @@ export async function POST(request: NextRequest) {
       const refund = body.object
       const paymentId = refund.payment_id
 
-      console.log('[Webhook] Refund received for payment:', paymentId)
+      console.log('[Webhook] 💸 REFUND EVENT RECEIVED')
+      console.log('[Webhook] Payment ID:', paymentId)
+      console.log('[Webhook] Refund amount:', refund.amount)
 
-      // Находим платеж и пользователя в нашей базе
+      let userId = null
+
+      // Сначала пытаемся найти платеж в нашей базе
       const { data: paymentData, error: paymentError } = await supabase
         .from('payments')
         .select('user_id')
         .eq('payment_id', paymentId)
         .single()
 
-      if (paymentData) {
-        console.log('[Webhook] Found payment in DB, user_id:', paymentData.user_id)
+      if (paymentData && paymentData.user_id) {
+        userId = paymentData.user_id
+        console.log('[Webhook] ✅ Found user in DB:', userId)
         
         // Обновляем статус платежа
         await supabase
           .from('payments')
           .update({ status: 'refunded', updated_at: new Date().toISOString() })
           .eq('payment_id', paymentId)
-
-        // Обнуляем подписку и восстанавливаем бесплатный лимит
-        const { error } = await supabase
-          .from('users')
-          .update({ 
-            pro_until: null,
-            generations_left: 3,
-            last_reset: new Date().toISOString()
-          })
-          .eq('id', paymentData.user_id)
-
-        if (error) {
-          console.error('[Webhook] Failed to cancel PRO:', error)
-        } else {
-          console.log(`[Webhook] 💸 Возврат: PRO отменен для ${paymentData.user_id}, восстановлено 3 генерации`)
-        }
       } else {
-        console.log('[Webhook] Payment not found in DB, trying to get from YooKassa API')
+        console.log('[Webhook] ⚠️ Payment not in DB, fetching from YooKassa...')
         
         // Если платеж не найден в нашей базе, получаем информацию из ЮKassa
         try {
@@ -102,33 +91,44 @@ export async function POST(request: NextRequest) {
             },
           })
 
-          const paymentInfo = await response.json()
-          const userId = paymentInfo.metadata?.user_id
-
-          if (userId) {
-            console.log('[Webhook] Got user_id from YooKassa:', userId)
+          if (response.ok) {
+            const paymentInfo = await response.json()
+            userId = paymentInfo.metadata?.user_id
+            console.log('[Webhook] YooKassa response:', JSON.stringify(paymentInfo.metadata))
             
-            // Обнуляем подписку и восстанавливаем бесплатный лимит
-            const { error } = await supabase
-              .from('users')
-              .update({ 
-                pro_until: null,
-                generations_left: 3,
-                last_reset: new Date().toISOString()
-              })
-              .eq('id', userId)
-
-            if (error) {
-              console.error('[Webhook] Failed to cancel PRO:', error)
-            } else {
-              console.log(`[Webhook] 💸 Возврат: PRO отменен для ${userId}, восстановлено 3 генерации`)
+            if (userId) {
+              console.log('[Webhook] ✅ Got user from YooKassa:', userId)
             }
           } else {
-            console.error('[Webhook] No user_id in payment metadata from YooKassa')
+            console.error('[Webhook] YooKassa API error:', response.status, await response.text())
           }
         } catch (apiError) {
-          console.error('[Webhook] Failed to get payment from YooKassa:', apiError)
+          console.error('[Webhook] Failed to fetch from YooKassa:', apiError)
         }
+      }
+
+      // Если нашли user_id - отменяем подписку
+      if (userId) {
+        console.log('[Webhook] Canceling subscription for user:', userId)
+        
+        const { data: updateResult, error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            pro_until: null,
+            generations_left: 3,
+            last_reset: new Date().toISOString()
+          })
+          .eq('id', userId)
+          .select()
+
+        if (updateError) {
+          console.error('[Webhook] ❌ Failed to cancel subscription:', updateError)
+        } else {
+          console.log('[Webhook] ✅ Subscription canceled successfully')
+          console.log('[Webhook] Update result:', updateResult)
+        }
+      } else {
+        console.error('[Webhook] ❌ Could not find user_id for refund')
       }
     }
 
