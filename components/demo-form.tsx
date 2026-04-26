@@ -169,9 +169,9 @@ export function DemoForm() {
           const newRemaining = remaining - 1
           setRemaining(newRemaining)
           
-          if (!token) {
-            localStorage.setItem('descro_remaining', newRemaining.toString())
-          }
+          // Для неавторизованных пользователей сохраняем в localStorage
+          // (авторизованные получают обновленный счетчик с сервера)
+          localStorage.setItem('descro_remaining', newRemaining.toString())
           
           if (newRemaining <= 0) {
             setShowPaywall(true)
@@ -279,9 +279,7 @@ export function DemoForm() {
     try {
       const response = await fetch('/api/payment/create', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
       })
       
       const data = await response.json()
