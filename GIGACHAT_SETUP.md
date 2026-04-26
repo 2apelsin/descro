@@ -5,7 +5,7 @@
 1. Перейдите на https://developers.sber.ru/studio/workspaces
 2. Войдите или зарегистрируйтесь
 3. Перейдите в раздел "Мой GigaChat API"
-4. Скопируйте **Client ID**: `019dbb35-9281-71cd-9574-3d2b1de4ccfa`
+4. Скопируйте **Client ID** (будет выглядеть как UUID)
 5. В разделе "Ключ авторизации" нажмите кнопку **"Получить ключ"**
 6. Скопируйте полученный **Authorization key** (это длинная строка Base64)
 
@@ -14,8 +14,8 @@
 Откройте файл `.env.local` и обновите:
 
 ```env
-GIGACHAT_CLIENT_ID=019dbb35-9281-71cd-9574-3d2b1de4ccfa
-GIGACHAT_CLIENT_SECRET=ваш_authorization_key_сюда
+GIGACHAT_CLIENT_ID=your_client_id_here
+GIGACHAT_CLIENT_SECRET=your_authorization_key_here
 ```
 
 **ВАЖНО:** 

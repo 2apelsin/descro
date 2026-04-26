@@ -37,8 +37,8 @@
 ## Что нужно проверить
 
 1. **Переменные окружения в Railway**:
-   - `YOOKASSA_SHOP_ID` = `1338860`
-   - `YOOKASSA_SECRET_KEY` = `live_2db7V3OuhRasAnUUwD7pGICDavrp-exydLhF8-GPfRc`
+   - `YOOKASSA_SHOP_ID` = `your_shop_id`
+   - `YOOKASSA_SECRET_KEY` = `your_secret_key`
 
 2. **Тестовая покупка**:
    - Зайди на https://descro-production.up.railway.app/pricing

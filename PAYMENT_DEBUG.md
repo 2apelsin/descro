@@ -18,8 +18,8 @@ git push
 
 ### Шаг 2: Проверь переменные окружения в Railway
 Зайди в Railway → Variables и убедись что есть:
-- `YOOKASSA_SHOP_ID` = `1338860`
-- `YOOKASSA_SECRET_KEY` = `live_2db7V3OuhRasAnUUwD7pGICDavrp-exydLhF8-GPfRc`
+- `YOOKASSA_SHOP_ID` = `your_shop_id`
+- `YOOKASSA_SECRET_KEY` = `your_secret_key`
 
 Если их нет - ДОБАВЬ!
 

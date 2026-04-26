@@ -257,8 +257,8 @@ CREATE TABLE refund_requests (
 
 ### Credentials
 ```env
-GIGACHAT_CLIENT_ID=019dbb35-9281-71cd-9574-3d2b1de4ccfa
-GIGACHAT_CLIENT_SECRET=MDE5ZGJiMzUtOTI4MS03MWNkLTk1NzQtM2QyYjFkZTRjY2ZhOjljMWNmNGUyLTI5YmYtNGQ2OS05MDIwLTc1Mzg1OTkwMjE1NA
+GIGACHAT_CLIENT_ID=your_gigachat_client_id_here
+GIGACHAT_CLIENT_SECRET=your_gigachat_client_secret_here
 NODE_TLS_REJECT_UNAUTHORIZED=0  # Для работы с Сбер API
 ```
 
@@ -424,8 +424,8 @@ SUPABASE_SERVICE_ROLE_KEY=...
 JWT_SECRET=descro_jwt_secret_change_this_to_random_string_min_32_chars
 
 # ЮKassa
-YOOKASSA_SHOP_ID=1338860
-YOOKASSA_SECRET_KEY=live_2db7V3OuhRasAnUUwD7pGICDavrp-exydLhF8-GPfRc
+YOOKASSA_SHOP_ID=your_shop_id_here
+YOOKASSA_SECRET_KEY=your_secret_key_here
 NEXT_PUBLIC_SITE_URL=https://descro-production.up.railway.app
 ```
 
