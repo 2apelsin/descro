@@ -42,8 +42,15 @@ export async function POST(request: NextRequest) {
     const shopId = process.env.YOOKASSA_SHOP_ID!
     const secretKey = process.env.YOOKASSA_SECRET_KEY!
     
+    console.log('[Payment] Credentials check:', {
+      hasShopId: !!shopId,
+      hasSecretKey: !!secretKey,
+      shopId: shopId?.substring(0, 4) + '***',
+      secretKeyLength: secretKey?.length
+    })
+    
     if (!shopId || !secretKey) {
-      console.error('Missing YooKassa credentials')
+      console.error('[Payment] Missing YooKassa credentials')
       return NextResponse.json({ error: 'Платежи временно недоступны' }, { status: 500 })
     }
 
@@ -83,9 +90,13 @@ export async function POST(request: NextRequest) {
     const payment = await response.json()
 
     if (!response.ok) {
-      console.error('[Payment] YooKassa error:', payment)
+      console.error('[Payment] YooKassa error:', {
+        status: response.status,
+        statusText: response.statusText,
+        payment
+      })
       return NextResponse.json(
-        { error: 'Ошибка создания платежа: ' + (payment.description || 'Неизвестная ошибка') },
+        { error: 'Ошибка создания платежа: ' + (payment.description || payment.type || 'Неизвестная ошибка') },
         { status: 500 }
       )
     }

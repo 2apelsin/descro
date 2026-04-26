@@ -54,10 +54,16 @@ export default function PricingPage() {
 
       const data = await response.json()
 
+      if (!response.ok) {
+        console.error('Payment creation failed:', data)
+        alert(data.error || 'Ошибка создания платежа')
+        return
+      }
+
       if (data.confirmation_url) {
         window.location.href = data.confirmation_url
       } else {
-        alert('Ошибка создания платежа')
+        alert('Ошибка: не получена ссылка на оплату')
       }
     } catch (error) {
       console.error('Payment error:', error)
