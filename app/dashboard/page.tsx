@@ -98,7 +98,7 @@ export default function DashboardPage() {
                   <span className="text-3xl">⭐</span>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">PRO подписка активна</h3>
-                    <p className="text-slate-600">Безлимитные генерации</p>
+                    <p className="text-emerald-600 font-semibold text-lg">∞ Безлимитные генерации</p>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-emerald-200">
@@ -108,6 +108,18 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-500 mt-1">
                     Осталось: {daysLeft} {daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'}
                   </p>
+                </div>
+              </div>
+              
+              {/* Статистика */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl bg-white border border-slate-200 p-4 text-center">
+                  <div className="text-3xl font-bold text-emerald-600">∞</div>
+                  <p className="text-sm text-slate-600 mt-1">Генераций в месяц</p>
+                </div>
+                <div className="rounded-xl bg-white border border-slate-200 p-4 text-center">
+                  <div className="text-3xl font-bold text-slate-900">{daysLeft}</div>
+                  <p className="text-sm text-slate-600 mt-1">Дней осталось</p>
                 </div>
               </div>
             </div>

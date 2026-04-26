@@ -92,9 +92,14 @@ export function SiteHeader() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/dashboard"
-                  className="hidden text-sm sm:block font-medium text-slate-900 hover:text-slate-600"
+                  className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-900 hover:text-slate-600"
                 >
-                  {user.name || user.email}
+                  <span>{user.name || user.email}</span>
+                  {user.pro_until && new Date(user.pro_until) > new Date() && (
+                    <span className="rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 px-2 py-0.5 text-xs font-bold text-white">
+                      PRO
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={handleLogout}
