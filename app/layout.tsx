@@ -79,9 +79,10 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   verification: {
-    // Добавь после регистрации в вебмастерах
+    // Яндекс Вебмастер
+    yandex: '4f79fc537d4c7d48',
+    // Google Search Console - добавь после регистрации
     // google: 'your-google-verification-code',
-    // yandex: 'your-yandex-verification-code',
   },
 }
 
