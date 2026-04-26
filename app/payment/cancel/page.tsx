@@ -1,34 +1,26 @@
+'use client'
+
 import Link from 'next/link'
 
-export default function PaymentCancelPage() {
+export default function PaymentCancel() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#16161e] rounded-2xl p-8 text-center border border-[#333]">
-        <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-        
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Оплата отменена
-        </h1>
-        
-        <p className="text-gray-300 mb-8">
-          Вы можете попробовать снова в любое время
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <div className="text-6xl mb-4">❌</div>
+        <h1 className="text-3xl font-bold mb-2">Оплата отменена</h1>
+        <p className="text-gray-400 mb-6">
+          Вы можете попробовать снова в любой момент.
         </p>
-        
         <div className="space-y-3">
           <Link
             href="/pricing"
-            className="block px-8 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+            className="block bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-opacity"
           >
             Попробовать снова
           </Link>
-          
           <Link
             href="/"
-            className="block px-8 py-3 bg-[#1a1a1a] text-white font-semibold rounded-xl hover:bg-[#222] transition-colors border border-[#333]"
+            className="block bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white px-6 py-3 rounded-xl font-semibold transition-colors"
           >
             Вернуться на главную
           </Link>

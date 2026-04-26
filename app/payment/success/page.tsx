@@ -1,29 +1,38 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function PaymentSuccessPage() {
+export default function PaymentSuccess() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // Перенаправляем в дашборд через 3 секунды
+    const timer = setTimeout(() => {
+      router.push('/dashboard')
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [router])
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#16161e] rounded-2xl p-8 text-center border border-[#333]">
-        <div className="w-16 h-16 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Спасибо за покупку!
-        </h1>
-        
-        <p className="text-gray-300 mb-8">
-          PRO доступ активирован. Теперь вы можете генерировать описания без ограничений!
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <div className="text-6xl mb-4">✅</div>
+        <h1 className="text-3xl font-bold mb-2">PRO активирован!</h1>
+        <p className="text-gray-400 mb-6">
+          Спасибо за оплату. Безлимитный доступ открыт на 30 дней.
         </p>
-        
         <Link
-          href="/"
-          className="inline-block px-8 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          href="/dashboard"
+          className="inline-block bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-opacity"
         >
-          Вернуться на главную
+          Перейти в личный кабинет
         </Link>
+        <p className="text-sm text-gray-500 mt-4">
+          Автоматическое перенаправление через 3 секунды...
+        </p>
       </div>
     </div>
   )

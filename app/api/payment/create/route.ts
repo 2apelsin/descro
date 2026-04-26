@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         return_url: `${
           process.env.NEXT_PUBLIC_SITE_URL ||
           'https://descro-production.up.railway.app'
-        }/dashboard`,
+        }/payment/success`,
       },
       description: 'PRO подписка на 1 месяц',
       metadata: {
