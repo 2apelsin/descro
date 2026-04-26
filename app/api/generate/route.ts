@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
+import https from 'https'
 import { supabase } from '@/lib/supabase'
 import { verifyToken } from '@/lib/auth'
 
@@ -9,28 +10,69 @@ export const dynamic = 'force-dynamic'
 // Твой ключ из кабинета Сбера (уже в base64)
 const GIGACHAT_AUTH = 'MDE5ZGJiMzUtOTI4MS03MWNkLTk1NzQtM2QyYjFkZTRjY2ZhOjljMWNmNGUyLTI5YmYtNGQ2OS05MDIwLTc1Mzg1OTkwMjE1NA=='
 
+// Custom HTTPS agent только для GigaChat (безопаснее чем NODE_TLS_REJECT_UNAUTHORIZED=0)
+const gigachatAgent = new https.Agent({
+  rejectUnauthorized: false, // Только для GigaChat API, не влияет на другие запросы
+})
+
+// Retry helper с экспоненциальной задержкой
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 2,
+  delay = 1000
+): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn()
+    } catch (error: any) {
+      const isLastAttempt = i === retries
+      
+      // Не повторяем для клиентских ошибок (4xx кроме 429)
+      if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+        throw error
+      }
+      
+      if (isLastAttempt) {
+        throw error
+      }
+      
+      // Экспоненциальная задержка: 1s, 2s, 4s...
+      const waitTime = delay * Math.pow(2, i)
+      console.log(`[Retry] Attempt ${i + 1} failed, retrying in ${waitTime}ms...`)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
+  }
+  throw new Error('Retry failed')
+}
+
 async function getToken() {
   console.log('[GigaChat] Requesting token...')
   
-  const res = await fetch('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${GIGACHAT_AUTH}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'RqUID': randomUUID(),
-    },
-    body: 'scope=GIGACHAT_API_PERS',
+  return retryWithBackoff(async () => {
+    const res = await fetch('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${GIGACHAT_AUTH}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'RqUID': randomUUID(),
+      },
+      body: 'scope=GIGACHAT_API_PERS',
+      // @ts-ignore - Node.js specific agent
+      agent: gigachatAgent,
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('[GigaChat] Auth error:', res.status, text)
+      const error: any = new Error(`Auth error: ${res.status} — ${text}`)
+      error.status = res.status
+      throw error
+    }
+
+    const data = await res.json()
+    console.log('[GigaChat] ✓ Token received')
+    return data.access_token
   })
-
-  if (!res.ok) {
-    const text = await res.text()
-    console.error('[GigaChat] Auth error:', res.status, text)
-    throw new Error(`Auth error: ${res.status} — ${text}`)
-  }
-
-  const data = await res.json()
-  console.log('[GigaChat] ✓ Token received')
-  return data.access_token
 }
 
 export async function POST(req: NextRequest) {
@@ -48,20 +90,27 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Проверяем авторизацию
-    const authHeader = req.headers.get('authorization')
+    // Проверяем авторизацию - читаем токен из cookie или header
+    let token = req.cookies.get('auth_token')?.value
+    
+    if (!token) {
+      const authHeader = req.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
+    
     let user = null
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7)
+    if (token) {
       const payload = await verifyToken(token)
       
       if (payload) {
-        // Получаем профиль пользователя
+        // Получаем профиль пользователя из новой таблицы users
         const { data: profile } = await supabase
-          .from('teleg')
+          .from('users')
           .select('*')
-          .eq('telegram_id', payload.telegram_id)
+          .eq('id', payload.userId)
           .single()
         
         if (profile) {
@@ -110,33 +159,41 @@ export async function POST(req: NextRequest) {
 }`
 
     console.log('[API] Calling GigaChat API...')
-    const res = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'RqUID': randomUUID(),
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'GigaChat',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Ты — эксперт по маркетплейсам с опытом 5+ лет. Пишешь продающие тексты для Ozon и Wildberries. Знаешь SEO и психологию покупателей. Отвечаешь ТОЛЬКО валидным JSON без markdown.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.8,
-        max_tokens: 1000,
-      }),
-    })
+    const res = await retryWithBackoff(async () => {
+      const response = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'RqUID': randomUUID(),
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'GigaChat',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'Ты — эксперт по маркетплейсам с опытом 5+ лет. Пишешь продающие тексты для Ozon и Wildberries. Знаешь SEO и психологию покупателей. Отвечаешь ТОЛЬКО валидным JSON без markdown.' 
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.8,
+          max_tokens: 1000,
+        }),
+        // @ts-ignore - Node.js specific agent
+        agent: gigachatAgent,
+      })
 
-    if (!res.ok) {
-      const text = await res.text()
-      console.error('[GigaChat] API error:', res.status, text)
-      throw new Error(`GigaChat error: ${res.status}`)
-    }
+      if (!response.ok) {
+        const text = await response.text()
+        console.error('[GigaChat] API error:', response.status, text)
+        const error: any = new Error(`GigaChat error: ${response.status}`)
+        error.status = response.status
+        throw error
+      }
+
+      return response
+    }, 2, 1000) // 2 retry, начиная с 1 секунды
 
     const data = await res.json()
     console.log('[GigaChat] ✓ Response received')
@@ -167,16 +224,16 @@ export async function POST(req: NextRequest) {
       if (!isPro) {
         // Уменьшаем счётчик
         await supabase
-          .from('teleg')
+          .from('users')
           .update({ generations_left: user.generations_left - 1 })
-          .eq('telegram_id', user.telegram_id)
+          .eq('id', user.id)
       }
       
       // Сохраняем в историю
       await supabase
         .from('generations')
         .insert({
-          user_id: user.telegram_id,
+          user_id: user.id,
           title: parsed.title
         })
     }

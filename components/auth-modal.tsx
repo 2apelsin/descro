@@ -32,13 +32,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Важно для получения cookies
         body: JSON.stringify(body)
       })
 
       const data = await res.json()
 
-      if (res.ok && data.token) {
-        localStorage.setItem('descro_token', data.token)
+      if (res.ok) {
+        // Токен теперь в httpOnly cookie, не нужно сохранять в localStorage
         onClose()
         window.location.reload()
       } else {

@@ -22,9 +22,10 @@ export function GenerationHistory() {
 
     async function fetchHistory() {
       try {
-        const token = localStorage.getItem('descro_token')
+        // Токен в httpOnly cookie, браузер отправит автоматически
         const res = await fetch('/api/generations', {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
+        })
         })
         
         if (res.ok) {

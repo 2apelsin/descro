@@ -4,8 +4,7 @@ import Script from 'next/script'
 
 export function YandexMetrika() {
   // ID счетчика Яндекс.Метрики
-  // Замените на свой ID после регистрации на https://metrika.yandex.ru
-  const METRIKA_ID = process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID || '98765432'
+  const METRIKA_ID = process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID || '108773114'
 
   return (
     <>

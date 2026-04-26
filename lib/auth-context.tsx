@@ -3,19 +3,20 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
 type User = {
-  telegram_id: number
-  username: string | null
-  first_name: string | null
+  id: string
+  email: string
+  name: string
   generations_left: number
   pro_until: string | null
   last_reset: string
+  created_at: string
 }
 
 type AuthContextType = {
   user: User | null
   loading: boolean
-  login: (token: string) => Promise<void>
-  logout: () => void
+  login: () => Promise<void>
+  logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
 
@@ -25,17 +26,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  async function fetchUser(token: string) {
+  async function fetchUser() {
     try {
+      // Токен теперь в httpOnly cookie, браузер отправит автоматически
       const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include' // Важно для отправки cookies
       })
       
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)
       } else {
-        localStorage.removeItem('descro_token')
         setUser(null)
       }
     } catch (error) {
@@ -44,31 +45,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(token: string) {
-    localStorage.setItem('descro_token', token)
-    await fetchUser(token)
+  async function login() {
+    // После успешного login/register API уже установил cookie
+    await fetchUser()
   }
 
-  function logout() {
-    localStorage.removeItem('descro_token')
+  async function logout() {
+    try {
+      // Вызываем API для удаления cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+    
     setUser(null)
     window.location.reload()
   }
 
   async function refreshUser() {
-    const token = localStorage.getItem('descro_token')
-    if (token) {
-      await fetchUser(token)
-    }
+    await fetchUser()
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('descro_token')
-    if (token) {
-      fetchUser(token).finally(() => setLoading(false))
-    } else {
-      setLoading(false)
-    }
+    // При загрузке проверяем есть ли cookie (браузер отправит автоматически)
+    fetchUser().finally(() => setLoading(false))
   }, [])
 
   return (

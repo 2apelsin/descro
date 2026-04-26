@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
     // Создаём токен
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' })
 
-    return NextResponse.json({
+    // Создаём response с httpOnly cookie
+    const response = NextResponse.json({
       success: true,
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -67,6 +67,17 @@ export async function POST(req: NextRequest) {
         pro_until: user.pro_until
       }
     })
+
+    // Устанавливаем httpOnly cookie (безопаснее localStorage)
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 дней
+      path: '/'
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ error: 'Ошибка сервера' }, { status: 500 })

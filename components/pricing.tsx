@@ -31,20 +31,17 @@ export function Pricing() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Проверяем авторизацию
-    const token = localStorage.getItem('descro_token')
-    if (token) {
-      fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+    // Проверяем авторизацию (токен в httpOnly cookie)
+    fetch('/api/auth/me', {
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setUser(data.user)
+        }
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setUser(data.user)
-          }
-        })
-        .catch(() => {})
-    }
+      .catch(() => {})
   }, [])
 
   const handleFreePlanClick = (e: React.MouseEvent) => {
@@ -83,12 +80,9 @@ export function Pricing() {
     // Создаем платеж
     setLoading(true)
     try {
-      const token = localStorage.getItem('descro_token')
       const response = await fetch('/api/payment/create', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include', // Токен в httpOnly cookie
       })
 
       const data = await response.json()

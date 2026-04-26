@@ -12,13 +12,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
 export async function POST(request: NextRequest) {
   try {
-    // Получаем токен из заголовка
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    // Получаем токен из cookie (приоритет) или из заголовка (обратная совместимость)
+    let token = request.cookies.get('auth_token')?.value
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader) {
+        token = authHeader.replace('Bearer ', '')
+      }
+    }
+    
+    if (!token) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
-
-    const token = authHeader.replace('Bearer ', '')
     
     // Декодируем JWT токен
     let payload: any

@@ -58,49 +58,45 @@ export function DemoForm() {
   const [creatingPayment, setCreatingPayment] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
-  // Загрузка лимита из localStorage и проверка PRO статуса
+  // Загрузка лимита и проверка PRO статуса
   useEffect(() => {
-    const token = localStorage.getItem('descro_token')
-    
-    // Проверяем PRO статус если есть токен
-    if (token) {
-      fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.user) {
-            const proUntil = data.user.pro_until ? new Date(data.user.pro_until) : null
-            const isProActive = !!(proUntil && proUntil > new Date())
-            
-            setIsPro(isProActive)
-            setRemaining(data.user.generations_left)
-            
-            if (!isProActive && data.user.generations_left <= 0) {
-              setShowPaywall(true)
-            }
+    // Проверяем PRO статус (токен в httpOnly cookie, браузер отправит автоматически)
+    fetch('/api/auth/me', {
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user) {
+          const proUntil = data.user.pro_until ? new Date(data.user.pro_until) : null
+          const isProActive = !!(proUntil && proUntil > new Date())
+          
+          setIsPro(isProActive)
+          setRemaining(data.user.generations_left)
+          
+          if (!isProActive && data.user.generations_left <= 0) {
+            setShowPaywall(true)
           }
-        })
-        .catch(err => console.error('Failed to fetch user:', err))
-    } else {
-      // Локальный лимит для неавторизованных
-      const saved = localStorage.getItem('descro_remaining')
-      const resetAt = localStorage.getItem('descro_reset_at')
-      const now = Date.now()
+        } else {
+          // Локальный лимит для неавторизованных
+          const saved = localStorage.getItem('descro_remaining')
+          const resetAt = localStorage.getItem('descro_reset_at')
+          const now = Date.now()
 
-      if (resetAt && now - parseInt(resetAt) > 24 * 60 * 60 * 1000) {
-        localStorage.setItem('descro_remaining', '3')
-        localStorage.setItem('descro_reset_at', now.toString())
-        setRemaining(3)
-      } else if (saved) {
-        const count = parseInt(saved)
-        setRemaining(count)
-        if (count <= 0) setShowPaywall(true)
-      } else {
-        localStorage.setItem('descro_remaining', '3')
-        localStorage.setItem('descro_reset_at', now.toString())
-      }
-    }
+          if (resetAt && now - parseInt(resetAt) > 24 * 60 * 60 * 1000) {
+            localStorage.setItem('descro_remaining', '3')
+            localStorage.setItem('descro_reset_at', now.toString())
+            setRemaining(3)
+          } else if (saved) {
+            const count = parseInt(saved)
+            setRemaining(count)
+            if (count <= 0) setShowPaywall(true)
+          } else {
+            localStorage.setItem('descro_remaining', '3')
+            localStorage.setItem('descro_reset_at', now.toString())
+          }
+        }
+      })
+      .catch(err => console.error('Failed to fetch user:', err))
   }, [])
 
   useEffect(() => {
@@ -148,16 +144,11 @@ export function DemoForm() {
     }, 200)
     
     try {
-      const token = localStorage.getItem('descro_token')
-      const headers: HeadersInit = { "Content-Type": "application/json" }
-      
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
-      }
-      
+      // Токен теперь в httpOnly cookie, браузер отправит автоматически
       const res = await fetch("/api/generate", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ name, category, features, marketplace }),
       })
       const data = await res.json()
@@ -266,9 +257,12 @@ export function DemoForm() {
   }
 
   async function createPayment(plan: string) {
-    const token = localStorage.getItem('descro_token')
+    // Токен теперь в httpOnly cookie
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include'
+    })
     
-    if (!token) {
+    if (!res.ok) {
       // Показываем модалку входа
       setToast({ message: "Сначала войдите в аккаунт", type: "error" })
       // Можно добавить открытие модалки входа

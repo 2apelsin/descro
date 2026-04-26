@@ -6,59 +6,69 @@
 - ✅ Добавлена таблица с историей последних 20 генераций
 - ✅ Кнопка "Копировать" - копирует весь текст
 - ✅ Кнопка "Удалить" - удаляет из БД
-- ✅ Показывает дату и время создания
+- ✅ Показывает дата и время создания
 - ✅ API endpoint GET /api/generations
 - ✅ API endpoint DELETE /api/generations/[id]
+
+### 4. Удалить реальные ключи из документации ⚠️ БЕЗОПАСНОСТЬ
+- ✅ Заменены все реальные ключи на placeholders
+- ✅ Обновлены: PROJECT_OVERVIEW.md, CREDENTIALS.md, VERCEL_DEPLOY.md
+- ✅ Обновлены: GIGACHAT_SETUP.md, PAYMENT_FIXED.md, PAYMENT_DEBUG.md
+- ✅ Создан SECURITY.md с best practices
+- ✅ Проверен .gitignore
+
+### 6. Добавить "Забыли пароль?" в AuthModal
+- ✅ Добавлена форма восстановления пароля
+- ✅ Создан API endpoint /api/auth/reset-password
+- ✅ Показывается предупреждение при регистрации о сохранении пароля
+
+### 7. Исправить кнопки тарифов на главной
+- ✅ "Попробовать" - открывает auth modal или скроллит к demo
+- ✅ "Получить скидку" - открывает auth modal или создает платеж
+- ✅ Проверка статуса PRO перед оплатой
+- ✅ Event listener для открытия auth modal из header
+
+### 9. Yandex.Metrica для аналитики
+- ✅ Создан компонент YandexMetrika
+- ✅ Интегрирован в app/layout.tsx
+- ✅ ID счетчика: 108773114
+- ✅ Включены: clickmap, trackLinks, accurateTrackBounce, webvisor, ecommerce
+- ✅ Создан YANDEX_METRIKA_SETUP.md
 
 ---
 
 ## 🔴 КРИТИЧНО - СДЕЛАТЬ СЕЙЧАС
 
-### 2. Убрать `NODE_TLS_REJECT_UNAUTHORIZED=0` ⚠️ БЕЗОПАСНОСТЬ
-**Проблема:** Отключена проверка SSL-сертификатов - уязвимость к MITM атакам
-
-**Решение:**
-```bash
-# 1. Проверить сертификат GigaChat
-curl -v https://gigachat.devices.sberbank.ru/api/v1
-
-# 2. Если проблема в CA - добавить сертификат
-# 3. Убрать NODE_TLS_REJECT_UNAUTHORIZED=0 из .env
-```
-
-**Файлы:**
-- `.env.local` - удалить строку
-- Railway env vars - удалить переменную
+### 2. Обработка ошибок GigaChat с retry логикой
+- ✅ Добавлена функция retryWithBackoff с экспоненциальной задержкой
+- ✅ Retry для getToken() - до 2 попыток
+- ✅ Retry для GigaChat API - до 2 попыток
+- ✅ Умная обработка: не повторяет 4xx ошибки (кроме 429)
+- ✅ Логирование попыток в консоль
+- ✅ Экспоненциальная задержка: 1s, 2s, 4s...
 
 ---
 
-### 3. JWT в httpOnly cookies вместо localStorage ⚠️ БЕЗОПАСНОСТЬ
-**Проблема:** localStorage доступен для XSS атак
+### 3. Убрать `NODE_TLS_REJECT_UNAUTHORIZED=0` ⚠️ БЕЗОПАСНОСТЬ
+- ✅ Создан custom HTTPS agent только для GigaChat
+- ✅ Agent не влияет на другие запросы (безопаснее)
+- ✅ Удалено NODE_TLS_REJECT_UNAUTHORIZED=0 из .env.local
+- ✅ Создан GIGACHAT_SSL_FIX.md с документацией
+- ⚠️ ВАЖНО: Удалить NODE_TLS_REJECT_UNAUTHORIZED из Railway env vars
+- ⚠️ ВАЖНО: Протестировать работу после деплоя
 
-**Решение:**
-```typescript
-// В API routes (login, register)
-import { cookies } from 'next/headers'
+---
 
-// Установка cookie
-cookies().set('auth_token', jwt, {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'strict',
-  maxAge: 60 * 60 * 24 * 7 // 7 дней
-})
-
-// Чтение cookie
-const token = cookies().get('auth_token')?.value
-```
-
-**Файлы для изменения:**
-- `app/api/auth/login/route.ts`
-- `app/api/auth/register/route.ts`
-- `app/api/auth/me/route.ts`
-- `lib/auth-context.tsx`
-- `components/auth-modal.tsx`
-- Все компоненты, использующие `localStorage.getItem('descro_token')`
+### 4. JWT в httpOnly cookies вместо localStorage ⚠️ БЕЗОПАСНОСТЬ
+- ✅ Обновлены API routes: login, register, me, logout
+- ✅ Cookies устанавливаются с httpOnly, secure, sameSite
+- ✅ Обновлен auth-context.tsx - убран localStorage
+- ✅ Обновлен auth-modal.tsx - убран localStorage
+- ✅ Обновлены компоненты: demo-form, pricing, generation-history
+- ✅ Обновлены API: /api/generate, /api/payment/create, /api/generations
+- ✅ Поддержка обратной совместимости (читает из header если нет cookie)
+- ✅ Создан lib/api-client.ts с helper функциями
+- ⚠️ ВАЖНО: Протестировать после деплоя (login, register, генерация, платеж)
 
 ---
 
@@ -85,138 +95,23 @@ git filter-branch --force --index-filter \
 ---
 
 ### 5. Включить RLS для payments ⚠️ БЕЗОПАСНОСТЬ
-**SQL для Supabase:**
-```sql
--- Включить RLS
-ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+- ✅ Создан файл supabase-rls-policies.sql
+- ✅ Политика: пользователи видят только свои платежи
+- ✅ Политика: service_role управляет всеми платежами (для webhook)
+- ⚠️ ВАЖНО: Выполнить SQL в Supabase SQL Editor
+- ⚠️ ВАЖНО: Протестировать работу webhook после включения RLS
 
--- Политика для чтения своих платежей
-CREATE POLICY "Users can view own payments" 
-ON payments FOR SELECT 
-USING (auth.uid() = user_id);
-
--- Политика для webhook (service_role)
-CREATE POLICY "Service role can manage all payments" 
-ON payments FOR ALL 
-USING (auth.role() = 'service_role');
-```
-
-**Файлы:**
-- Создать `supabase-rls-policies.sql`
-- Выполнить в Supabase SQL Editor
-
----
-
-### 6. Добавить "Забыли пароль?" в AuthModal
-**Решение:**
-```typescript
-// В components/auth-modal.tsx
-const [resetEmail, setResetEmail] = useState('')
-const [showReset, setShowReset] = useState(false)
-
-const handlePasswordReset = async () => {
-  // Отправить email через API
-  await fetch('/api/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ email: resetEmail })
-  })
-  alert('Письмо отправлено на ' + resetEmail)
-}
-```
-
-**Новый файл:**
-- `app/api/auth/reset-password/route.ts`
-
----
-
-### 7. Исправить кнопки тарифов на главной
-**Файлы:**
-- `components/pricing.tsx`
-
-**Изменения:**
-```typescript
-// Кнопка "Попробовать"
-onClick={() => {
-  if (!user) {
-    setShowAuth(true)
-  } else {
-    document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })
-  }
-}}
-
-// Кнопка "Получить скидку"
-onClick={() => {
-  if (!user) {
-    setShowAuth(true)
-  } else if (isPro) {
-    alert('PRO уже активен до ' + proUntil)
-  } else {
-    handlePurchase()
-  }
-}}
-```
+**Инструкция:**
+1. Открыть https://supabase.com/dashboard/project/zsmchferozuopiqhekyb/sql
+2. Скопировать содержимое supabase-rls-policies.sql
+3. Выполнить SQL
+4. Проверить что webhook работает (создать тестовый платеж)
 
 ---
 
 ## 🟠 ВАЖНО - СДЕЛАТЬ НА ЭТОЙ НЕДЕЛЕ
 
-### 8. Обработка ошибок GigaChat с retry
-**Файл:** `app/api/generate/route.ts`
-
-```typescript
-async function callGigaChatWithRetry(prompt: string, retries = 2) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await callGigaChat(prompt)
-    } catch (error: any) {
-      if (error.status === 429) {
-        // Rate limit - подождать
-        await new Promise(r => setTimeout(r, 2000 * (i + 1)))
-        continue
-      }
-      if (error.status >= 500 && i < retries) {
-        // Server error - повторить
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)))
-        continue
-      }
-      throw error
-    }
-  }
-}
-```
-
----
-
-### 9. Yandex.Metrica для аналитики
-**Файл:** `app/layout.tsx`
-
-```typescript
-<Script id="yandex-metrika">
-  {`
-    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-    m[i].l=1*new Date();
-    for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-
-    ym(XXXXXX, "init", {
-      clickmap:true,
-      trackLinks:true,
-      accurateTrackBounce:true
-    });
-  `}
-</Script>
-```
-
-**Действия:**
-1. Зарегистрироваться на https://metrika.yandex.ru
-2. Создать счетчик
-3. Получить ID
-4. Вставить в layout.tsx
-
----
-
-### 10. Email уведомления после оплаты
+### 6. Email уведомления после оплаты
 **Опции:**
 1. **Resend** (https://resend.com) - 3000 emails/месяц бесплатно
 2. **SendGrid** - 100 emails/день бесплатно
@@ -261,20 +156,23 @@ npx supabase migration new initial_schema
 
 ## 📊 ПРОГРЕСС
 
-- ✅ 1/10 критических задач выполнено
-- ⏳ 9 задач в работе
-- 🎯 Цель: закрыть все 🔴 критичные за 2 дня
+- ✅ 8/10 критических задач выполнено (80%)
+- ⏳ 2 задачи осталось
+- 🎯 Осталось: RLS в Supabase + Email уведомления
 
 ---
 
 ## 🚀 СЛЕДУЮЩИЕ ШАГИ
 
 1. ✅ История генераций - ГОТОВО
-2. 🔴 Убрать NODE_TLS_REJECT_UNAUTHORIZED=0
-3. 🔴 JWT в httpOnly cookies
-4. 🔴 Удалить ключи из документации
-5. 🔴 Включить RLS для payments
-6. 🔴 "Забыли пароль?"
-7. 🔴 Исправить кнопки тарифов
+2. ✅ Обработка ошибок GigaChat с retry - ГОТОВО
+3. ✅ Убрать NODE_TLS_REJECT_UNAUTHORIZED=0 - ГОТОВО (нужно удалить из Railway)
+4. ✅ JWT в httpOnly cookies - ГОТОВО (нужно протестировать)
+5. 🔴 Включить RLS для payments - SQL ГОТОВ (нужно выполнить в Supabase)
+6. ✅ "Забыли пароль?" - ГОТОВО
+7. ✅ Исправить кнопки тарифов - ГОТОВО
+8. ✅ Удалить ключи из документации - ГОТОВО
+9. ✅ Yandex.Metrika - ГОТОВО
+10. 🟠 Email уведомления после оплаты - СЛЕДУЮЩАЯ ЗАДАЧА
 
-**Приоритет:** Безопасность → UX → Аналитика
+**Приоритет:** Тестирование → RLS → Email

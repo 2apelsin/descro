@@ -11,13 +11,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization')
+    // Читаем токен из cookie или header
+    let token = req.cookies.get('auth_token')?.value
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
+      const authHeader = req.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
+    
+    if (!token) {
       return NextResponse.json({ success: false, error: 'Не авторизован' }, { status: 401 })
     }
-
-    const token = authHeader.substring(7)
     
     let payload: any
     try {
