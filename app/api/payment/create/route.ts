@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     const paymentData = {
       amount: {
-        value: '199.00', // Первый месяц со скидкой
+        value: '1.00', // Тестовая цена для проверки
         currency: 'RUB',
       },
       capture: true,

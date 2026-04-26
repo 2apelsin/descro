@@ -112,12 +112,14 @@ export default function DashboardPage() {
       <SiteHeader />
       
       <main className="mx-auto max-w-4xl px-4 py-16">
-        <h1 className="mb-8 text-3xl font-bold text-slate-900">Мой аккаунт</h1>
+        <h1 className="mb-8 text-3xl font-bold text-slate-900 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          Мой аккаунт
+        </h1>
         
         {/* Профиль */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white text-2xl font-bold">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 text-white text-2xl font-bold shadow-lg">
               {user.name?.[0] || user.email[0].toUpperCase()}
             </div>
             <div>
@@ -130,7 +132,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Подписка */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
           <h2 className="mb-6 text-2xl font-semibold text-slate-900">Подписка</h2>
           
           {isPro ? (

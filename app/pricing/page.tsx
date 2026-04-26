@@ -81,16 +81,16 @@ export default function PricingPage() {
       
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             Выберите свой план
           </h1>
-          <p className="text-xl text-gray-400 text-center mb-12">
+          <p className="text-xl text-gray-400 text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
             Начните бесплатно или получите безлимитный доступ
           </p>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Бесплатный план */}
-            <div className="bg-[#16161e] rounded-2xl p-8 border border-[#333]">
+            <div className="bg-[#16161e] rounded-2xl p-8 border border-[#333] animate-in fade-in slide-in-from-left duration-700 delay-200 hover:scale-105 transition-transform">
               <h3 className="text-2xl font-bold text-white mb-2">Бесплатно</h3>
               <div className="text-4xl font-bold text-white mb-6">
                 0 ₽
@@ -126,8 +126,8 @@ export default function PricingPage() {
             </div>
 
             {/* PRO план */}
-            <div className="bg-gradient-to-br from-[#7c3aed]/20 to-[#3b82f6]/20 rounded-2xl p-8 border-2 border-[#7c3aed] relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white text-sm font-bold px-3 py-1 rounded-full">
+            <div className="bg-gradient-to-br from-[#7c3aed]/20 to-[#3b82f6]/20 rounded-2xl p-8 border-2 border-[#7c3aed] relative overflow-hidden animate-in fade-in slide-in-from-right duration-700 delay-300 hover:scale-105 transition-transform">
+              <div className="absolute top-4 right-4 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse">
                 Популярно
               </div>
 
