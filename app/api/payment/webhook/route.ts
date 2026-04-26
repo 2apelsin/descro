@@ -55,14 +55,16 @@ export async function POST(request: NextRequest) {
 
       console.log('[Webhook] Refund received for payment:', paymentId)
 
-      // Находим платеж и пользователя
-      const { data: paymentData } = await supabase
+      // Находим платеж и пользователя в нашей базе
+      const { data: paymentData, error: paymentError } = await supabase
         .from('payments')
         .select('user_id')
         .eq('payment_id', paymentId)
         .single()
 
       if (paymentData) {
+        console.log('[Webhook] Found payment in DB, user_id:', paymentData.user_id)
+        
         // Обновляем статус платежа
         await supabase
           .from('payments')
@@ -79,6 +81,45 @@ export async function POST(request: NextRequest) {
           console.error('[Webhook] Failed to cancel PRO:', error)
         } else {
           console.log(`[Webhook] 💸 Возврат: PRO отменен для ${paymentData.user_id}`)
+        }
+      } else {
+        console.log('[Webhook] Payment not found in DB, trying to get from YooKassa API')
+        
+        // Если платеж не найден в нашей базе, получаем информацию из ЮKassa
+        try {
+          const shopId = process.env.YOOKASSA_SHOP_ID!
+          const secretKey = process.env.YOOKASSA_SECRET_KEY!
+          const auth = Buffer.from(`${shopId}:${secretKey}`).toString('base64')
+
+          const response = await fetch(`https://api.yookassa.ru/v3/payments/${paymentId}`, {
+            headers: {
+              Authorization: `Basic ${auth}`,
+              'Content-Type': 'application/json',
+            },
+          })
+
+          const paymentInfo = await response.json()
+          const userId = paymentInfo.metadata?.user_id
+
+          if (userId) {
+            console.log('[Webhook] Got user_id from YooKassa:', userId)
+            
+            // Обнуляем подписку
+            const { error } = await supabase
+              .from('users')
+              .update({ pro_until: null })
+              .eq('id', userId)
+
+            if (error) {
+              console.error('[Webhook] Failed to cancel PRO:', error)
+            } else {
+              console.log(`[Webhook] 💸 Возврат: PRO отменен для ${userId}`)
+            }
+          } else {
+            console.error('[Webhook] No user_id in payment metadata from YooKassa')
+          }
+        } catch (apiError) {
+          console.error('[Webhook] Failed to get payment from YooKassa:', apiError)
         }
       }
     }
