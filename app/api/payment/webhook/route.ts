@@ -71,16 +71,20 @@ export async function POST(request: NextRequest) {
           .update({ status: 'refunded', updated_at: new Date().toISOString() })
           .eq('payment_id', paymentId)
 
-        // Обнуляем подписку
+        // Обнуляем подписку и восстанавливаем бесплатный лимит
         const { error } = await supabase
           .from('users')
-          .update({ pro_until: null })
+          .update({ 
+            pro_until: null,
+            generations_left: 3,
+            last_reset: new Date().toISOString()
+          })
           .eq('id', paymentData.user_id)
 
         if (error) {
           console.error('[Webhook] Failed to cancel PRO:', error)
         } else {
-          console.log(`[Webhook] 💸 Возврат: PRO отменен для ${paymentData.user_id}`)
+          console.log(`[Webhook] 💸 Возврат: PRO отменен для ${paymentData.user_id}, восстановлено 3 генерации`)
         }
       } else {
         console.log('[Webhook] Payment not found in DB, trying to get from YooKassa API')
@@ -104,16 +108,20 @@ export async function POST(request: NextRequest) {
           if (userId) {
             console.log('[Webhook] Got user_id from YooKassa:', userId)
             
-            // Обнуляем подписку
+            // Обнуляем подписку и восстанавливаем бесплатный лимит
             const { error } = await supabase
               .from('users')
-              .update({ pro_until: null })
+              .update({ 
+                pro_until: null,
+                generations_left: 3,
+                last_reset: new Date().toISOString()
+              })
               .eq('id', userId)
 
             if (error) {
               console.error('[Webhook] Failed to cancel PRO:', error)
             } else {
-              console.log(`[Webhook] 💸 Возврат: PRO отменен для ${userId}`)
+              console.log(`[Webhook] 💸 Возврат: PRO отменен для ${userId}, восстановлено 3 генерации`)
             }
           } else {
             console.error('[Webhook] No user_id in payment metadata from YooKassa')
@@ -140,16 +148,20 @@ export async function POST(request: NextRequest) {
         .update({ status: 'canceled', updated_at: new Date().toISOString() })
         .eq('payment_id', payment.id)
 
-      // Обнуляем подписку
+      // Обнуляем подписку и восстанавливаем бесплатный лимит
       const { error } = await supabase
         .from('users')
-        .update({ pro_until: null })
+        .update({ 
+          pro_until: null,
+          generations_left: 3,
+          last_reset: new Date().toISOString()
+        })
         .eq('id', userId)
 
       if (error) {
         console.error('[Webhook] Failed to cancel PRO:', error)
       } else {
-        console.log(`[Webhook] ❌ Отмена: PRO отменен для ${userId}`)
+        console.log(`[Webhook] ❌ Отмена: PRO отменен для ${userId}, восстановлено 3 генерации`)
       }
     }
 

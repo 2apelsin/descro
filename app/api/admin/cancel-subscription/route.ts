@@ -15,10 +15,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
     }
 
-    // Обнуляем подписку
+    // Обнуляем подписку и восстанавливаем бесплатный лимит
     const { error } = await supabase
       .from('users')
-      .update({ pro_until: null })
+      .update({ 
+        pro_until: null,
+        generations_left: 3,
+        last_reset: new Date().toISOString()
+      })
       .eq('email', email)
 
     if (error) {
@@ -26,11 +30,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log(`[Admin] ✅ Subscription canceled for ${email}`)
+    console.log(`[Admin] ✅ Subscription canceled for ${email}, restored 3 generations`)
 
     return NextResponse.json({ 
       success: true,
-      message: 'Subscription canceled'
+      message: 'Subscription canceled, restored to free plan (3 generations)'
     })
 
   } catch (error: any) {
