@@ -10,6 +10,7 @@ export default function PricingPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
+  const [isFirstPayment, setIsFirstPayment] = useState(true)
 
   useEffect(() => {
     checkAuth()
@@ -27,6 +28,16 @@ export default function PricingPage() {
         if (res.ok) {
           const data = await res.json()
           setUser(data.user)
+          
+          // Проверяем, была ли успешная оплата раньше
+          const paymentsRes = await fetch('/api/auth/check-payments', {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          
+          if (paymentsRes.ok) {
+            const paymentsData = await paymentsRes.json()
+            setIsFirstPayment(!paymentsData.hasSuccessfulPayments)
+          }
         }
       } catch (error) {
         console.error('Auth check error:', error)
@@ -133,10 +144,16 @@ export default function PricingPage() {
 
               <h3 className="text-2xl font-bold text-white mb-2">PRO</h3>
               <div className="text-4xl font-bold text-white mb-1">
-                299 ₽
+                {isFirstPayment ? '199' : '299'} ₽
                 <span className="text-lg text-gray-400 font-normal">/месяц</span>
               </div>
-              <p className="text-sm text-gray-400 mb-6">≈ 10 ₽ в день</p>
+              <p className="text-sm text-gray-400 mb-6">
+                {isFirstPayment ? (
+                  <>🎉 Первый месяц со скидкой!</>
+                ) : (
+                  <>≈ 10 ₽ в день</>
+                )}
+              </p>
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-3 text-white">

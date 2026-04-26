@@ -70,6 +70,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Проверяем, была ли у пользователя подписка раньше
+    const { data: previousPayments } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'succeeded')
+      .limit(1)
+
+    // Первая оплата: 199₽, продление: 299₽
+    const isFirstPayment = !previousPayments || previousPayments.length === 0
+    const price = isFirstPayment ? '199.00' : '299.00'
+    const priceForDb = isFirstPayment ? 199.00 : 299.00
+
+    console.log('[Payment] Price calculation:', {
+      userId: user.id,
+      isFirstPayment,
+      price: price + '₽'
+    })
+
     // Создаём платёж в ЮKassa
     const shopId = process.env.YOOKASSA_SHOP_ID!
     const secretKey = process.env.YOOKASSA_SECRET_KEY!
@@ -92,7 +111,7 @@ export async function POST(request: NextRequest) {
     
     const paymentData = {
       amount: {
-        value: '1.00', // Тестовая цена для проверки
+        value: price,
         currency: 'RUB',
       },
       capture: true,
@@ -100,9 +119,12 @@ export async function POST(request: NextRequest) {
         type: 'redirect',
         return_url: `${siteUrl}/payment/success`,
       },
-      description: 'PRO подписка на 1 месяц',
+      description: isFirstPayment 
+        ? 'PRO подписка на 1 месяц (первая оплата)' 
+        : 'PRO подписка на 1 месяц (продление)',
       metadata: {
         user_id: user.id,
+        is_first_payment: isFirstPayment.toString(),
       },
       // ВАЖНО: URL для webhook уведомлений от ЮKassa
       notification_url: `${siteUrl}/api/payment/webhook`,
@@ -142,7 +164,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         payment_id: payment.id,
-        amount: 199.00,
+        amount: priceForDb,
         status: 'pending'
       })
 
