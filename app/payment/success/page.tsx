@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [activating, setActivating] = useState(true)
   const [error, setError] = useState('')
 
@@ -97,5 +96,17 @@ export default function PaymentSuccess() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">
+        <div className="text-6xl animate-pulse">⏳</div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
