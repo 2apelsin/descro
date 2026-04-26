@@ -1,0 +1,19 @@
+# robots.txt для Descro
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /payment/
+
+# Sitemap
+Sitemap: https://descro-production.up.railway.app/sitemap.xml
+
+# Основные поисковики
+User-agent: Googlebot
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: Bingbot
+Allow: /

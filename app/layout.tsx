@@ -12,13 +12,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Descro — Генератор описаний товаров для Ozon, Wildberries, Яндекс Маркет",
   description:
-    "AI-генератор создаёт продающие заголовки, описания и буллеты для карточек товаров за 10 секунд. Без копирайтера.",
-  keywords: ["генератор описаний", "ozon", "wildberries", "яндекс маркет", "ai", "карточки товаров"],
+    "AI-генератор создаёт продающие заголовки, описания и буллеты для карточек товаров за 10 секунд. Без копирайтера. Бесплатно 3 генерации в день!",
+  keywords: ["генератор описаний", "ozon", "wildberries", "яндекс маркет", "ai", "карточки товаров", "seo описания", "маркетплейсы"],
   authors: [{ name: "Descro" }],
+  robots: "index, follow",
   openGraph: {
     title: "Descro — Описания товаров за 10 секунд",
     description: "AI-генератор для Ozon, Wildberries и Яндекс Маркет. Попробуйте бесплатно!",
-    url: "https://descro.ru",
+    url: "https://descro-production.up.railway.app",
     siteName: "Descro",
     locale: "ru_RU",
     type: "website",
@@ -28,6 +29,10 @@ export const metadata: Metadata = {
     title: "Descro — Описания товаров за 10 секунд",
     description: "AI-генератор для маркетплейсов. Попробуйте бесплатно!",
   },
+  alternates: {
+    canonical: "https://descro-production.up.railway.app",
+  },
+}
   icons: {
     icon: [
       { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },

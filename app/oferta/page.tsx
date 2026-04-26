@@ -89,7 +89,7 @@ export default function OfertaPage() {
             <div className="space-y-2 text-slate-700">
               <p>8.1. Возврат после использования генераций не производится (ст. 32 Закона о защите прав потребителей).</p>
               <p>8.2. Возврат возможен в течение 24 часов при отсутствии использования.</p>
-              <p>8.3. Технические сбои рассматриваются индивидуально: support@descro.ru</p>
+              <p>8.3. Технические сбои рассматриваются индивидуально: descrosupport@gmail.com</p>
             </div>
           </section>
 
@@ -107,8 +107,7 @@ export default function OfertaPage() {
               <p><strong>ФИО:</strong> Аверьянов Илья Александрович</p>
               <p><strong>ИНН:</strong> 132610362688</p>
               <p><strong>Статус:</strong> Самозанятый</p>
-              <p><strong>Email:</strong> support@descro.ru</p>
-              <p><strong>Поддержка:</strong> Telegram @Telegagocod_bot</p>
+              <p><strong>Email:</strong> descrosupport@gmail.com</p>
             </div>
           </section>
 

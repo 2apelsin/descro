@@ -36,7 +36,7 @@ export default function RequisitesPage() {
             <div className="space-y-4">
               <div>
                 <h3 className="mb-1 text-sm font-medium text-slate-500">Email</h3>
-                <p className="text-lg text-slate-900">support@descro.ru</p>
+                <p className="text-lg text-slate-900">descrosupport@gmail.com</p>
               </div>
 
               <div>
