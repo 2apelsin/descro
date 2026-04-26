@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
 
     const auth = Buffer.from(`${shopId}:${secretKey}`).toString('base64')
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://descro-production.up.railway.app'
+    
     const paymentData = {
       amount: {
         value: '1.00', // Тестовая цена для проверки
@@ -96,15 +98,14 @@ export async function POST(request: NextRequest) {
       capture: true,
       confirmation: {
         type: 'redirect',
-        return_url: `${
-          process.env.NEXT_PUBLIC_SITE_URL ||
-          'https://descro-production.up.railway.app'
-        }/payment/success`,
+        return_url: `${siteUrl}/payment/success`,
       },
       description: 'PRO подписка на 1 месяц',
       metadata: {
         user_id: user.id,
       },
+      // ВАЖНО: URL для webhook уведомлений от ЮKassa
+      notification_url: `${siteUrl}/api/payment/webhook`,
     }
 
     console.log('[Payment] Creating payment for user:', user.id)

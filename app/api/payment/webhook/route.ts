@@ -7,11 +7,14 @@ const supabase = createClient(
 )
 
 export async function POST(request: NextRequest) {
+  console.log('[Webhook] 🔔 Incoming request from:', request.headers.get('user-agent'))
+  console.log('[Webhook] Request URL:', request.url)
+  
   try {
     const body = await request.json()
     
-    console.log('[Webhook] Full body:', JSON.stringify(body, null, 2))
-    console.log('[Webhook] Event type:', body.event)
+    console.log('[Webhook] 📦 Full body:', JSON.stringify(body, null, 2))
+    console.log('[Webhook] 🎯 Event type:', body.event)
 
     // Успешный платёж - активируем подписку
     if (body.event === 'payment.succeeded' && body.object) {
