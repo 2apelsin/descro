@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get('authorization')
@@ -29,7 +29,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Неверный токен' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Удаляем только свои генерации
     const { error } = await supabase
