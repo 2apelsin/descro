@@ -40,8 +40,8 @@ export default function RequisitesPage() {
               </div>
 
               <div>
-                <h3 className="mb-1 text-sm font-medium text-slate-500">Telegram</h3>
-                <p className="text-lg text-slate-900">@YOUR_TELEGRAM</p>
+                <h3 className="mb-1 text-sm font-medium text-slate-500">Email</h3>
+                <p className="text-lg text-slate-900">descrosupport@gmail.com</p>
               </div>
             </div>
           </div>
