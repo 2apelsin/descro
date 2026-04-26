@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,15 +28,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Неверный токен' }, { status: 401 })
     }
 
+    // Rate limiting - не более 3 попыток создания платежа в минуту
+    const rateLimitCheck = checkRateLimit(`payment:${payload.userId}`, 3, 60000)
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json({ 
+        error: 'Слишком много попыток. Пожалуйста, подождите минуту.' 
+      }, { status: 429 })
+    }
+
     // Получаем пользователя из базы
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, pro_until')
       .eq('id', payload.userId)
       .single()
 
     if (userError || !user) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 401 })
+    }
+
+    // Проверяем, нет ли уже активной подписки
+    const isPro = user.pro_until && new Date(user.pro_until) > new Date()
+    if (isPro) {
+      return NextResponse.json({ 
+        error: 'У вас уже есть активная PRO подписка' 
+      }, { status: 400 })
+    }
+
+    // Проверяем, нет ли незавершенных платежей за последние 10 минут
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { data: recentPayments } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .gte('created_at', tenMinutesAgo)
+
+    if (recentPayments && recentPayments.length > 0) {
+      return NextResponse.json({ 
+        error: 'У вас уже есть незавершенный платеж. Пожалуйста, завершите его или подождите 10 минут.' 
+      }, { status: 400 })
     }
 
     // Создаём платёж в ЮKassa
@@ -58,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     const paymentData = {
       amount: {
-        value: '1.00', // Минимальная сумма для теста
+        value: '199.00', // Первый месяц со скидкой
         currency: 'RUB',
       },
       capture: true,

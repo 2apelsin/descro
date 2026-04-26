@@ -20,6 +20,8 @@ export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundMessage, setRefundMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('descro_token')
@@ -65,6 +67,46 @@ export default function DashboardPage() {
   const proUntil = user.pro_until ? new Date(user.pro_until) : null
   const daysLeft = proUntil ? Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0
 
+  const handleRefundRequest = async () => {
+    if (!confirm('Вы уверены, что хотите запросить возврат средств? Подписка будет отменена после одобрения.')) {
+      return
+    }
+
+    setRefundLoading(true)
+    setRefundMessage(null)
+
+    try {
+      const token = localStorage.getItem('descro_token')
+      const response = await fetch('/api/refund/request', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setRefundMessage({ 
+          type: 'success', 
+          text: data.message || 'Запрос на возврат отправлен' 
+        })
+      } else {
+        setRefundMessage({ 
+          type: 'error', 
+          text: data.error || 'Ошибка при запросе возврата' 
+        })
+      }
+    } catch (error) {
+      setRefundMessage({ 
+        type: 'error', 
+        text: 'Не удалось отправить запрос' 
+      })
+    } finally {
+      setRefundLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <SiteHeader />
@@ -93,6 +135,16 @@ export default function DashboardPage() {
           
           {isPro ? (
             <div className="space-y-4">
+              {refundMessage && (
+                <div className={`rounded-xl p-4 ${
+                  refundMessage.type === 'success' 
+                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                    : 'bg-red-50 border border-red-200 text-red-800'
+                }`}>
+                  {refundMessage.text}
+                </div>
+              )}
+
               <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-blue-50 p-6 border border-emerald-200">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl">⭐</span>
@@ -122,6 +174,23 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-600 mt-1">Дней осталось</p>
                 </div>
               </div>
+
+              {/* Кнопка возврата */}
+              {daysLeft <= 7 && (
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Возврат средств</h4>
+                  <p className="text-xs text-slate-600 mb-3">
+                    Возврат возможен в течение 7 дней после покупки. Запрос обрабатывается вручную в течение 1-3 рабочих дней.
+                  </p>
+                  <button
+                    onClick={handleRefundRequest}
+                    disabled={refundLoading}
+                    className="w-full rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 disabled:opacity-50 transition-colors"
+                  >
+                    {refundLoading ? 'Отправка...' : 'Запросить возврат'}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
