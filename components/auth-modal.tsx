@@ -102,15 +102,15 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         onClick={onClose}
       />
 
-      <div className="relative bg-[#1a1a1a] rounded-2xl max-w-[420px] w-full p-8 border border-[#333] shadow-2xl">
+      <div className="relative bg-[#1a1a1a] rounded-2xl max-w-[420px] w-full p-6 sm:p-8 border border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-white transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <h2 className="text-2xl font-bold text-white text-center mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white text-center mb-4 sm:mb-6">
           {showReset ? 'Восстановление пароля' : (isLogin ? 'Вход' : 'Регистрация')}
         </h2>
 

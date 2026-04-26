@@ -259,3 +259,65 @@
     height: 200px;
   }
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Улучшенная читаемость на мобильных */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Увеличенные touch targets для кнопок */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Оптимизация модальных окон */
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Улучшенные отступы для мобильных */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Оптимизация форм */
+  input, textarea, select {
+    font-size: 16px; /* Предотвращает zoom на iOS */
+  }
+
+  /* Скрытие горизонтального скролла */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Улучшения для очень маленьких экранов */
+@media (max-width: 375px) {
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Landscape mode на мобильных */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero-section {
+    min-height: auto;
+  }
+}
+
+/* Touch-friendly hover states */
+@media (hover: none) {
+  button:hover {
+    transform: none;
+  }
+}
