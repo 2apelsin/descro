@@ -31,9 +31,9 @@ export default function PrivacyPage() {
             <div className="space-y-2 text-slate-700">
               <p>2.1. При использовании Сервиса мы можем собирать следующие данные:</p>
               <ul className="list-disc list-inside ml-4 space-y-1">
-                <li><strong>Telegram ID</strong> — для авторизации и идентификации пользователя</li>
-                <li><strong>Имя пользователя Telegram</strong> — для отображения в интерфейсе</li>
-                <li><strong>Email</strong> — для связи и уведомлений (если предоставлен)</li>
+                <li><strong>Email адрес</strong> — для авторизации и связи с пользователем</li>
+                <li><strong>Имя пользователя</strong> — для отображения в интерфейсе (по желанию)</li>
+                <li><strong>Пароль</strong> — хранится в зашифрованном виде (bcrypt)</li>
                 <li><strong>История генераций</strong> — сохраненные описания товаров</li>
                 <li><strong>Технические данные</strong> — IP-адрес, тип браузера, cookies</li>
               </ul>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
                 <li>Требовать удаления ваших данных</li>
                 <li>Отозвать согласие на обработку данных</li>
               </ul>
-              <p>7.2. Для реализации своих прав обратитесь на: <a href="mailto:support@descro.ru" className="text-blue-600 hover:underline">support@descro.ru</a></p>
+              <p>7.2. Для реализации своих прав обратитесь на: <a href="mailto:descrosupport@gmail.com" className="text-blue-600 hover:underline">descrosupport@gmail.com</a></p>
             </div>
           </section>
 
@@ -134,8 +134,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-slate-900 mb-3">10. Контакты</h2>
             <div className="space-y-2 text-slate-700">
               <p>По вопросам обработки персональных данных обращайтесь:</p>
-              <p><strong>Email:</strong> <a href="mailto:support@descro.ru" className="text-blue-600 hover:underline">support@descro.ru</a></p>
-              <p><strong>Telegram:</strong> @Telegagocod_bot</p>
+              <p><strong>Email:</strong> <a href="mailto:descrosupport@gmail.com" className="text-blue-600 hover:underline">descrosupport@gmail.com</a></p>
             </div>
           </section>
 

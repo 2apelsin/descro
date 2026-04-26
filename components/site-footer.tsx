@@ -44,13 +44,8 @@ export function SiteFooter() {
             <h4 className="mb-3 text-sm font-semibold text-slate-900">Контакты</h4>
             <ul className="space-y-2 text-sm text-slate-600">
               <li>
-                <a href="mailto:hello@descro.ru" className="hover:text-slate-900">
-                  hello@descro.ru
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-slate-900">
-                  Telegram
+                <a href="mailto:descrosupport@gmail.com" className="hover:text-slate-900">
+                  descrosupport@gmail.com
                 </a>
               </li>
               <li>
