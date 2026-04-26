@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/lib/auth-context'
+import { YandexMetrika } from '@/components/yandex-metrika'
 import './globals.css'
 
 const inter = Inter({
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="ru" className={`${inter.variable} bg-background`}>
       <body className="font-sans antialiased">
         <AuthProvider>{children}</AuthProvider>
+        <YandexMetrika />
       </body>
     </html>
   )
