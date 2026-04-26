@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 function PaymentSuccessContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [checking, setChecking] = useState(true)
   const [isPro, setIsPro] = useState(false)
   const [error, setError] = useState('')
@@ -38,7 +37,7 @@ function PaymentSuccessContent() {
         
         // Проверяем, активна ли PRO подписка
         const proUntil = data.user.pro_until ? new Date(data.user.pro_until) : null
-        const isProActive = proUntil && proUntil > new Date()
+        const isProActive = !!(proUntil && proUntil > new Date())
         
         setIsPro(isProActive)
         setChecking(false)
