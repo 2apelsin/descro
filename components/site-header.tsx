@@ -11,6 +11,14 @@ export function SiteHeader() {
 
   useEffect(() => {
     checkAuth()
+    
+    // Слушаем событие открытия модалки
+    const handleOpenAuth = () => setShowAuth(true)
+    window.addEventListener('openAuthModal', handleOpenAuth)
+    
+    return () => {
+      window.removeEventListener('openAuthModal', handleOpenAuth)
+    }
   }, [])
 
   const checkAuth = async () => {

@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from "next/link"
 
 const plans = [
@@ -24,6 +27,83 @@ const plans = [
 ]
 
 export function Pricing() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    // Проверяем авторизацию
+    const token = localStorage.getItem('descro_token')
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setUser(data.user)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [])
+
+  const handleFreePlanClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    if (!user) {
+      // Если не авторизован - показываем модалку (через событие)
+      window.dispatchEvent(new CustomEvent('openAuthModal'))
+    } else {
+      // Если авторизован - скроллим к демо
+      const demoSection = document.getElementById('demo')
+      if (demoSection) {
+        demoSection.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
+
+  const handleProPlanClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    if (!user) {
+      // Если не авторизован - показываем модалку
+      window.dispatchEvent(new CustomEvent('openAuthModal'))
+      return
+    }
+
+    // Проверяем, есть ли уже PRO
+    const isPro = user.pro_until && new Date(user.pro_until) > new Date()
+    
+    if (isPro) {
+      const proUntil = new Date(user.pro_until).toLocaleDateString('ru-RU')
+      alert(`PRO подписка уже активна до ${proUntil}`)
+      return
+    }
+
+    // Создаем платеж
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('descro_token')
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.confirmation_url) {
+        window.location.href = data.confirmation_url
+      } else {
+        alert(data.error || 'Ошибка создания платежа')
+      }
+    } catch (error) {
+      alert('Ошибка создания платежа')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <section id="pricing" className="bg-white py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -75,16 +155,17 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Link
-                href={plan.href}
-                className={`btn-glow block rounded-xl py-3 text-center font-medium transition-all ${
+              <button
+                onClick={plan.name === 'Бесплатно' ? handleFreePlanClick : handleProPlanClick}
+                disabled={loading && plan.popular}
+                className={`btn-glow block w-full rounded-xl py-3 text-center font-medium transition-all disabled:opacity-50 ${
                   plan.popular
                     ? "bg-white text-slate-900 hover:bg-slate-100 hover:scale-105 animate-pulse-glow"
                     : "bg-slate-900 text-white hover:bg-slate-800 hover:scale-105"
                 }`}
               >
-                {plan.cta}
-              </Link>
+                {loading && plan.popular ? 'Загрузка...' : plan.cta}
+              </button>
             </div>
           ))}
         </div>
