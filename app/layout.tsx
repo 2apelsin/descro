@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://descro-production.up.railway.app",
   },
-}
   icons: {
     icon: [
       { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
