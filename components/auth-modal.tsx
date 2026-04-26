@@ -164,7 +164,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <p className="text-sm text-yellow-200 flex items-start gap-2">
                   <span className="text-lg">⚠️</span>
                   <span>
-                    <strong>Важно:</strong> Сохраните свой пароль! Восстановление пароля пока недоступно.
+                    <strong>Важно:</strong> Сохраните свой пароль! Если забудете - напишите на descrosupport@gmail.com
                   </span>
                 </p>
               </div>
