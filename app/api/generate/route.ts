@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import https from 'https'
 import { supabase } from '@/lib/supabase'
-import { verifyToken } from '@/lib/auth'
+import jwt from 'jsonwebtoken'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Твой ключ из кабинета Сбера (уже в base64)
 const GIGACHAT_AUTH = 'MDE5ZGJiMzUtOTI4MS03MWNkLTk1NzQtM2QyYjFkZTRjY2ZhOjljMWNmNGUyLTI5YmYtNGQ2OS05MDIwLTc1Mzg1OTkwMjE1NA=='
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
 // Custom HTTPS agent только для GigaChat (безопаснее чем NODE_TLS_REJECT_UNAUTHORIZED=0)
 const gigachatAgent = new https.Agent({
@@ -90,50 +91,54 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Проверяем авторизацию - читаем токен из cookie или header
-    let token = req.cookies.get('auth_token')?.value
+    // Проверяем авторизацию - читаем JWT токен из cookie или header
+    let authToken = req.cookies.get('auth_token')?.value
     
-    if (!token) {
+    if (!authToken) {
       const authHeader = req.headers.get('authorization')
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7)
+        authToken = authHeader.substring(7)
       }
     }
     
     let user = null
     
-    if (token) {
-      const payload = await verifyToken(token)
+    if (authToken) {
+      try {
+        const payload: any = jwt.verify(authToken, JWT_SECRET)
       
-      if (payload) {
-        // Получаем профиль пользователя из новой таблицы users
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', payload.userId)
-          .single()
-        
-        if (profile) {
-          user = profile
+        if (payload) {
+          // Получаем профиль пользователя из новой таблицы users
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', payload.userId)
+            .single()
           
-          // Проверяем PRO статус
-          const isPro = profile.pro_until && new Date(profile.pro_until) > new Date()
-          
-          if (!isPro) {
-            // Проверяем лимит
-            if (profile.generations_left <= 0) {
-              return NextResponse.json(
-                { success: false, error: 'Лимит исчерпан. Получите PRO доступ.' },
-                { status: 403 }
-              )
+          if (profile) {
+            user = profile
+            
+            // Проверяем PRO статус
+            const isPro = profile.pro_until && new Date(profile.pro_until) > new Date()
+            
+            if (!isPro) {
+              // Проверяем лимит
+              if (profile.generations_left <= 0) {
+                return NextResponse.json(
+                  { success: false, error: 'Лимит исчерпан. Получите PRO доступ.' },
+                  { status: 403 }
+                )
+              }
             }
           }
         }
+      } catch (error) {
+        console.error('[API] Token verification error:', error)
       }
     }
 
-    console.log('[API] Getting token...')
-    const token = await getToken()
+    console.log('[API] Getting GigaChat token...')
+    const gigachatToken = await getToken()
 
     const prompt = `Ты — эксперт по маркетплейсам Ozon и Wildberries. Создай продающее описание товара.
 
@@ -163,7 +168,7 @@ export async function POST(req: NextRequest) {
       const response = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${gigachatToken}`,
           'Content-Type': 'application/json',
           'RqUID': randomUUID(),
           'Accept': 'application/json',
