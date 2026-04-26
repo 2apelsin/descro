@@ -10,11 +10,13 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true)
+  const [showReset, setShowReset] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'error' | 'success'>('error')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,9 +42,50 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         onClose()
         window.location.reload()
       } else {
+        setMessageType('error')
         setMessage(data.error || 'Ошибка')
       }
     } catch (error) {
+      setMessageType('error')
+      setMessage('Ошибка сервера')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email) {
+      setMessageType('error')
+      setMessage('Введите email')
+      return
+    }
+
+    setLoading(true)
+    setMessage('')
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setMessageType('success')
+        setMessage(data.message || 'Письмо отправлено на ' + email)
+        setTimeout(() => {
+          setShowReset(false)
+          setIsLogin(true)
+        }, 3000)
+      } else {
+        setMessageType('error')
+        setMessage(data.error || 'Ошибка')
+      }
+    } catch (error) {
+      setMessageType('error')
       setMessage('Ошибка сервера')
     } finally {
       setLoading(false)
@@ -67,10 +110,47 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </button>
 
         <h2 className="text-2xl font-bold text-white text-center mb-6">
-          {isLogin ? 'Вход' : 'Регистрация'}
+          {showReset ? 'Восстановление пароля' : (isLogin ? 'Вход' : 'Регистрация')}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {showReset ? (
+          <form onSubmit={handlePasswordReset} className="space-y-4">
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-4">
+              <p className="text-sm text-blue-200">
+                Введите email, на который зарегистрирован аккаунт. Мы отправим инструкции по восстановлению пароля.
+              </p>
+            </div>
+
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#333] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+            />
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {loading ? 'Отправка...' : 'Отправить инструкции'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowReset(false)
+                setMessage('')
+              }}
+              className="w-full text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              ← Вернуться к входу
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <>
               <input
@@ -117,23 +197,41 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           >
             {loading ? 'Загрузка...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
           </button>
+
+          {isLogin && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowReset(true)
+                setMessage('')
+              }}
+              className="w-full text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Забыли пароль?
+            </button>
+          )}
         </form>
+        )}
 
         {message && (
-          <p className="mt-4 text-sm text-center text-red-400">
+          <p className={`mt-4 text-sm text-center ${
+            messageType === 'success' ? 'text-green-400' : 'text-red-400'
+          }`}>
             {message}
           </p>
         )}
 
-        <button
-          onClick={() => {
-            setIsLogin(!isLogin)
-            setMessage('')
-          }}
-          className="mt-6 w-full text-sm text-gray-400 hover:text-white transition-colors"
-        >
-          {isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}
-        </button>
+        {!showReset && (
+          <button
+            onClick={() => {
+              setIsLogin(!isLogin)
+              setMessage('')
+            }}
+            className="mt-6 w-full text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            {isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}
+          </button>
+        )}
       </div>
     </div>
   )
