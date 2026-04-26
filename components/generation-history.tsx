@@ -26,7 +26,6 @@ export function GenerationHistory() {
         const res = await fetch('/api/generations', {
           credentials: 'include'
         })
-        })
         
         if (res.ok) {
           const data = await res.json()
