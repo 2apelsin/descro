@@ -13,20 +13,10 @@ function PaymentSuccessContent() {
   useEffect(() => {
     // Проверяем статус подписки (НЕ активируем!)
     const checkProStatus = async () => {
-      const token = localStorage.getItem('descro_token')
-      
-      if (!token) {
-        setError('Токен не найден')
-        setChecking(false)
-        return
-      }
-
       try {
-        // Просто проверяем текущий статус пользователя
+        // Просто проверяем текущий статус пользователя (токен в httpOnly cookie)
         const response = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
+          credentials: 'include'
         })
 
         if (!response.ok) {

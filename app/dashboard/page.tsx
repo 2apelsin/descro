@@ -35,24 +35,23 @@ export default function DashboardPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('descro_token')
-
-    if (!token) {
-      router.push('/')
-      return
-    }
-
-    // Загружаем профиль
+    // Проверяем авторизацию и загружаем профиль (токен в httpOnly cookie)
     fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include'
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          router.push('/')
+          return null
+        }
+        return res.json()
+      })
       .then((data) => {
-        if (data.success && data.user) {
+        if (data && data.success && data.user) {
           setUser(data.user)
           // Загружаем историю генераций
-          loadGenerations(token)
-        } else {
+          loadGenerations()
+        } else if (data) {
           router.push('/')
         }
       })
@@ -60,11 +59,11 @@ export default function DashboardPage() {
       .finally(() => setLoading(false))
   }, [router])
 
-  const loadGenerations = async (token: string) => {
+  const loadGenerations = async () => {
     setGenerationsLoading(true)
     try {
       const res = await fetch('/api/generations', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       const data = await res.json()
       if (data.success) {
@@ -87,11 +86,10 @@ export default function DashboardPage() {
   const deleteGeneration = async (id: string) => {
     if (!confirm('Удалить эту генерацию?')) return
     
-    const token = localStorage.getItem('descro_token')
     try {
       await fetch(`/api/generations/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       setGenerations(generations.filter(g => g.id !== id))
     } catch (error) {
@@ -128,12 +126,9 @@ export default function DashboardPage() {
     setRefundMessage(null)
 
     try {
-      const token = localStorage.getItem('descro_token')
       const response = await fetch('/api/refund/request', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       })
 
       const data = await response.json()

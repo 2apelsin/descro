@@ -16,21 +16,18 @@ export function GenerationLimiter({ children, onGenerationAttempt }: GenerationL
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('descro_token')
-    
-    if (token) {
-      try {
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
-        }
-      } catch (error) {
-        console.error('Auth check error:', error)
+    try {
+      // Токен в httpOnly cookie
+      const res = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
       }
+    } catch (error) {
+      console.error('Auth check error:', error)
     }
     
     setLoading(false)

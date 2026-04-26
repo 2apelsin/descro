@@ -22,30 +22,32 @@ export function SiteHeader() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('descro_token')
+    try {
+      // Токен в httpOnly cookie, браузер отправит автоматически
+      const res = await fetch('/api/auth/me', {
+        credentials: 'include',
+      })
 
-    if (token) {
-      try {
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
-        } else {
-          localStorage.removeItem('descro_token')
-        }
-      } catch (error) {
-        console.error('Auth check error:', error)
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
       }
+    } catch (error) {
+      console.error('Auth check error:', error)
     }
 
     setLoading(false)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('descro_token')
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
     window.location.reload()
   }
 

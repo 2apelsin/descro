@@ -17,38 +17,38 @@ export default function PricingPage() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('descro_token')
+    try {
+      // Токен в httpOnly cookie
+      const res = await fetch('/api/auth/me', {
+        credentials: 'include',
+      })
 
-    if (token) {
-      try {
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+        
+        // Проверяем, была ли успешная оплата раньше
+        const paymentsRes = await fetch('/api/auth/check-payments', {
+          credentials: 'include',
         })
-
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
-          
-          // Проверяем, была ли успешная оплата раньше
-          const paymentsRes = await fetch('/api/auth/check-payments', {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          
-          if (paymentsRes.ok) {
-            const paymentsData = await paymentsRes.json()
-            setIsFirstPayment(!paymentsData.hasSuccessfulPayments)
-          }
+        
+        if (paymentsRes.ok) {
+          const paymentsData = await paymentsRes.json()
+          setIsFirstPayment(!paymentsData.hasSuccessfulPayments)
         }
-      } catch (error) {
-        console.error('Auth check error:', error)
       }
+    } catch (error) {
+      console.error('Auth check error:', error)
     }
   }
 
   const handlePurchase = async () => {
-    const token = localStorage.getItem('descro_token')
+    // Проверяем авторизацию
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include'
+    })
 
-    if (!token) {
+    if (!res.ok) {
       setShowAuth(true)
       return
     }
@@ -58,9 +58,7 @@ export default function PricingPage() {
     try {
       const response = await fetch('/api/payment/create', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       })
 
       const data = await response.json()
