@@ -16,12 +16,23 @@ type UserProfile = {
   created_at: string
 }
 
+type Generation = {
+  id: string
+  title: string
+  description: string
+  bullets: string[]
+  created_at: string
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [generations, setGenerations] = useState<Generation[]>([])
   const [loading, setLoading] = useState(true)
+  const [generationsLoading, setGenerationsLoading] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundMessage, setRefundMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('descro_token')
@@ -39,6 +50,8 @@ export default function DashboardPage() {
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user)
+          // Загружаем историю генераций
+          loadGenerations(token)
         } else {
           router.push('/')
         }
@@ -46,6 +59,45 @@ export default function DashboardPage() {
       .catch(() => router.push('/'))
       .finally(() => setLoading(false))
   }, [router])
+
+  const loadGenerations = async (token: string) => {
+    setGenerationsLoading(true)
+    try {
+      const res = await fetch('/api/generations', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setGenerations(data.generations || [])
+      }
+    } catch (error) {
+      console.error('Failed to load generations:', error)
+    } finally {
+      setGenerationsLoading(false)
+    }
+  }
+
+  const copyToClipboard = (gen: Generation) => {
+    const text = `${gen.title}\n\n${gen.description}\n\n${gen.bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')}`
+    navigator.clipboard.writeText(text)
+    setCopiedId(gen.id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const deleteGeneration = async (id: string) => {
+    if (!confirm('Удалить эту генерацию?')) return
+    
+    const token = localStorage.getItem('descro_token')
+    try {
+      await fetch(`/api/generations/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setGenerations(generations.filter(g => g.id !== id))
+    } catch (error) {
+      alert('Ошибка при удалении')
+    }
+  }
 
   if (loading) {
     return (
@@ -223,6 +275,75 @@ export default function DashboardPage() {
                   Купить подписку
                 </Link>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* История генераций */}
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+          <h2 className="mb-6 text-2xl font-semibold text-slate-900">История генераций</h2>
+          
+          {generationsLoading ? (
+            <div className="text-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900 mx-auto" />
+              <p className="text-slate-600 mt-2">Загрузка...</p>
+            </div>
+          ) : generations.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500 text-lg">Пока нет сгенерированных описаний</p>
+              <Link
+                href="/#demo"
+                className="mt-4 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Создать первое описание →
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {generations.map((gen) => (
+                <div
+                  key={gen.id}
+                  className="rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-900 text-lg">{gen.title}</h3>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {new Date(gen.created_at).toLocaleDateString('ru-RU', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyToClipboard(gen)}
+                        className="rounded-lg bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-200 transition-colors"
+                      >
+                        {copiedId === gen.id ? '✓ Скопировано' : '📋 Копировать'}
+                      </button>
+                      <button
+                        onClick={() => deleteGeneration(gen.id)}
+                        className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200 transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <p className="text-slate-700">{gen.description}</p>
+                    <ul className="list-disc list-inside space-y-1 text-slate-600">
+                      {gen.bullets.map((bullet, i) => (
+                        <li key={i}>{bullet}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

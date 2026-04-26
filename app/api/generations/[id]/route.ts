@@ -9,7 +9,10 @@ const supabase = createClient(
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
 
-export async function GET(req: NextRequest) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const authHeader = req.headers.get('authorization')
     
@@ -26,22 +29,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Неверный токен' }, { status: 401 })
     }
 
-    // Получаем последние 20 генераций
-    const { data: generations, error } = await supabase
+    const { id } = params
+
+    // Удаляем только свои генерации
+    const { error } = await supabase
       .from('generations')
-      .select('*')
+      .delete()
+      .eq('id', id)
       .eq('user_id', payload.userId)
-      .order('created_at', { ascending: false })
-      .limit(20)
 
     if (error) {
-      console.error('[Generations] Error:', error)
-      return NextResponse.json({ success: false, error: 'Ошибка получения истории' }, { status: 500 })
+      console.error('[Delete Generation] Error:', error)
+      return NextResponse.json({ success: false, error: 'Ошибка удаления' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, generations })
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Generations] Error:', error)
+    console.error('[Delete Generation] Error:', error)
     return NextResponse.json({ success: false, error: 'Ошибка сервера' }, { status: 500 })
   }
 }
