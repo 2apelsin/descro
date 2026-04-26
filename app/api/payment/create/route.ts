@@ -103,6 +103,20 @@ export async function POST(request: NextRequest) {
 
     console.log('[Payment] Success, redirecting to:', payment.confirmation.confirmation_url)
 
+    // Сохраняем информацию о платеже в базу
+    const { error: saveError } = await supabase
+      .from('payments')
+      .insert({
+        user_id: user.id,
+        payment_id: payment.id,
+        amount: 199.00,
+        status: 'pending'
+      })
+
+    if (saveError) {
+      console.error('[Payment] Failed to save payment:', saveError)
+    }
+
     return NextResponse.json({
       confirmation_url: payment.confirmation.confirmation_url,
       payment_id: payment.id

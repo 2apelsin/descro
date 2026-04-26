@@ -10,17 +10,23 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    console.log('YooKassa webhook received:', body)
+    console.log('[Webhook] YooKassa event:', body.event)
 
-    // Проверяем, что это успешный платёж
+    // Успешный платёж - активируем подписку
     if (body.event === 'payment.succeeded' && body.object) {
       const payment = body.object
       const userId = payment.metadata?.user_id
 
       if (!userId) {
-        console.error('No user_id in payment metadata')
+        console.error('[Webhook] No user_id in payment metadata')
         return NextResponse.json({ received: true })
       }
+
+      // Обновляем статус платежа
+      await supabase
+        .from('payments')
+        .update({ status: 'succeeded', updated_at: new Date().toISOString() })
+        .eq('payment_id', payment.id)
 
       // Активируем PRO подписку на 30 дней
       const proUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -33,19 +39,81 @@ export async function POST(request: NextRequest) {
         .eq('id', userId)
 
       if (error) {
-        console.error('Failed to activate PRO:', error)
+        console.error('[Webhook] Failed to activate PRO:', error)
       } else {
         console.log(
-          `✅ PRO активирован для пользователя ${userId} до ${proUntil.toLocaleDateString(
-            'ru-RU'
-          )}`
+          `[Webhook] ✅ PRO активирован для ${userId} до ${proUntil.toLocaleDateString('ru-RU')}`
         )
+      }
+    }
+
+    // Возврат средств - отменяем подписку
+    if (body.event === 'refund.succeeded' && body.object) {
+      const refund = body.object
+      const paymentId = refund.payment_id
+
+      console.log('[Webhook] Refund received for payment:', paymentId)
+
+      // Находим платеж и пользователя
+      const { data: paymentData } = await supabase
+        .from('payments')
+        .select('user_id')
+        .eq('payment_id', paymentId)
+        .single()
+
+      if (paymentData) {
+        // Обновляем статус платежа
+        await supabase
+          .from('payments')
+          .update({ status: 'refunded', updated_at: new Date().toISOString() })
+          .eq('payment_id', paymentId)
+
+        // Обнуляем подписку
+        const { error } = await supabase
+          .from('users')
+          .update({ pro_until: null })
+          .eq('id', paymentData.user_id)
+
+        if (error) {
+          console.error('[Webhook] Failed to cancel PRO:', error)
+        } else {
+          console.log(`[Webhook] 💸 Возврат: PRO отменен для ${paymentData.user_id}`)
+        }
+      }
+    }
+
+    // Отмена платежа - отменяем подписку
+    if (body.event === 'payment.canceled' && body.object) {
+      const payment = body.object
+      const userId = payment.metadata?.user_id
+
+      if (!userId) {
+        console.error('[Webhook] No user_id in canceled payment')
+        return NextResponse.json({ received: true })
+      }
+
+      // Обновляем статус платежа
+      await supabase
+        .from('payments')
+        .update({ status: 'canceled', updated_at: new Date().toISOString() })
+        .eq('payment_id', payment.id)
+
+      // Обнуляем подписку
+      const { error } = await supabase
+        .from('users')
+        .update({ pro_until: null })
+        .eq('id', userId)
+
+      if (error) {
+        console.error('[Webhook] Failed to cancel PRO:', error)
+      } else {
+        console.log(`[Webhook] ❌ Отмена: PRO отменен для ${userId}`)
       }
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('[Webhook] Error:', error)
     return NextResponse.json({ received: true }, { status: 200 })
   }
 }
