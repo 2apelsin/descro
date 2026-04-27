@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import https from 'https'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import jwt from 'jsonwebtoken'
 
 export const runtime = 'nodejs'
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       
         if (payload) {
           // Получаем профиль пользователя из новой таблицы users
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseAdmin
             .from('users')
             .select('*')
             .eq('id', payload.userId)
@@ -228,14 +228,14 @@ export async function POST(req: NextRequest) {
       
       if (!isPro) {
         // Уменьшаем счётчик
-        await supabase
+        await supabaseAdmin
           .from('users')
           .update({ generations_left: user.generations_left - 1 })
           .eq('id', user.id)
       }
       
       // Сохраняем в историю
-      await supabase
+      await supabaseAdmin
         .from('generations')
         .insert({
           user_id: user.id,

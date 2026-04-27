@@ -94,18 +94,29 @@ git filter-branch --force --index-filter \
 
 ---
 
-### 5. Включить RLS для payments ⚠️ БЕЗОПАСНОСТЬ
+### 5. Включить RLS для всех таблиц ⚠️ БЕЗОПАСНОСТЬ КРИТИЧНО
 - ✅ Создан файл supabase-rls-policies.sql
-- ✅ Политика: пользователи видят только свои платежи
-- ✅ Политика: service_role управляет всеми платежами (для webhook)
-- ⚠️ ВАЖНО: Выполнить SQL в Supabase SQL Editor
-- ⚠️ ВАЖНО: Протестировать работу webhook после включения RLS
+- ✅ Обновлены политики для email-based auth (убран telegram_id)
+- ✅ Добавлен RLS для users, payments, generations
+- ✅ Политики: пользователи видят только свои данные
+- ✅ Политики: service_role управляет всеми данными (для API)
+- ✅ Создан ENABLE_RLS_NOW.md с пошаговой инструкцией
+- ✅ Создан RLS_READY_TO_ENABLE.md с полной документацией
+- ✅ Исправлен /api/generate - теперь использует supabaseAdmin
+- ✅ Проверены все API endpoints - все используют service_role
+- 🔴 КРИТИЧНО: Выполнить SQL в Supabase SQL Editor СЕЙЧАС
+- ⚠️ ВАЖНО: Протестировать после включения (webhook, генерации, история)
+- ⚠️ ВАЖНО: Задеплоить обновленный код на Railway
 
-**Инструкция:**
+**Быстрая инструкция:**
 1. Открыть https://supabase.com/dashboard/project/zsmchferozuopiqhekyb/sql
-2. Скопировать содержимое supabase-rls-policies.sql
-3. Выполнить SQL
-4. Проверить что webhook работает (создать тестовый платеж)
+2. Скопировать весь код из supabase-rls-policies.sql
+3. Вставить в SQL Editor и нажать Run
+4. Проверить что все 3 таблицы показывают rowsecurity = true
+5. Задеплоить код на Railway (git push)
+6. Протестировать: регистрация, генерация, платеж, история
+
+**Подробная инструкция:** См. файлы ENABLE_RLS_NOW.md и RLS_READY_TO_ENABLE.md
 
 ---
 
